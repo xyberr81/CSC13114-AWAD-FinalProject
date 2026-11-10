@@ -1,0 +1,2 @@
+# False positive: an example Idempotency-Key (a made-up UUID) in the contract, not a secret.
+b6d2176768627e60252add5c4560d7140ffc7958:docs/contract/post-lab-submissions.md:generic-api-key:123
