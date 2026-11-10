@@ -10,13 +10,22 @@ import {
   type Problem,
   type ProblemFieldError,
 } from './problem.js';
+import type { Db } from './db/client.js';
 import { healthRoutes } from './routes/health.js';
 
 const PROBLEM_JSON = 'application/problem+json';
 
-export function buildApp(opts: FastifyServerOptions = {}): FastifyInstance {
+export interface AppDeps {
+  db: Db;
+  jwtSecret: string;
+}
+
+export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): FastifyInstance {
   // allErrors: a validation problem lists every broken field, not just the first.
-  const app = Fastify({ ...opts, ajv: { customOptions: { allErrors: true } } });
+  const app = Fastify({
+    ...opts,
+    ajv: { customOptions: { allErrors: true } },
+  });
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
     const body = toProblem(error);
@@ -33,6 +42,7 @@ export function buildApp(opts: FastifyServerOptions = {}): FastifyInstance {
   });
 
   void app.register(healthRoutes, { prefix: '/v1' });
+  void deps; // used by the routes to come
 
   return app;
 }
