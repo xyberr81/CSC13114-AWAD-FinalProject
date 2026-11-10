@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import type { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
 import { bearerToken, parseId, verifyToken } from '../auth.js';
 import type { Db } from '../db/client.js';
-import { classMembers, idempotencyKeys, labs, submissions, users } from '../db/schema.js';
+import { idempotencyKeys, labs, submissions, users } from '../db/schema.js';
 import { isValidIdempotencyKey, submissionFingerprint } from '../idempotency.js';
 import { ProblemError } from '../problem.js';
 
@@ -76,14 +76,6 @@ export const submissionRoutes: FastifyPluginCallback<SubmissionRouteDeps> = (
       ? await db
           .select({ id: labs.id, deadline: labs.deadline })
           .from(labs)
-          .innerJoin(
-            classMembers,
-            and(
-              eq(classMembers.classId, labs.classId),
-              eq(classMembers.userId, user.id),
-              eq(classMembers.role, 'student'),
-            ),
-          )
           .where(eq(labs.id, labId))
           .limit(1)
       : [];
