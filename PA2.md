@@ -62,7 +62,7 @@ Self-assessment: [`SELF_ASSESSMENT_REPORT.md`](SELF_ASSESSMENT_REPORT.md).
   docker run --rm -v "$PWD/scan:/repo" -v "$PWD/.gitleaksignore:/ignore/.gitleaksignore" \
     ghcr.io/gitleaks/gitleaks:v8.21.2 git --log-opts="--all" \
     --gitleaks-ignore-path /ignore/.gitleaksignore --redact /repo
-  # 7 commits scanned … no leaks found
+  # 9 commits scanned … no leaks found (run at 1a78f0d)
   ```
 
   Without the ignore file it reports exactly one finding, the one listed in
