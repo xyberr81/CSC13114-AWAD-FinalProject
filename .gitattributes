@@ -1,0 +1,4 @@
+# Keep LF everywhere, also on Windows clones with core.autocrlf=true:
+# Prettier checks for LF, so CRLF in the working tree makes `npm run format:check` fail.
+* text=auto eol=lf
+*.png binary
