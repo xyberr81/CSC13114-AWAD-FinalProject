@@ -1,11 +1,11 @@
 # AI-LOG — LeeTKOB
 
-Team: `<MSSV1> — <name>` · `<MSSV2> — <name>` · `<MSSV3> — <name>`
+Team: 23120024 — Nguyễn Thanh Bình · 23120046 — Hồ Thùy Hương · 23120061 — Nguyễn Thị Ánh Ngọc
 
-| Tool                                   | Used for                                                                                       |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Claude Code (VS Code), Claude Opus 5.5 | repository scaffold, CI, rules file, contract draft, contract and unit tests, implementation   |
-| none                                   | branch protection settings, reviewing the contract decisions (D1–D5), the force-push of `main` |
+| Tool                                   | Used for                                                                                                            |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Claude Code (VS Code), Claude Opus 5.5 | repository scaffold, CI, rules file, contract draft, contract and unit tests, implementation, PA#2 evidence and PRs |
+| none                                   | branch protection and the ruleset, reviewing the contract decisions (D1–D5), PR approvals, the force-push of `main` |
 
 Model inside the product: none yet (PA#3). Data that will leave our system then: lab statement,
 constraints, and submission code with comments, names and student IDs stripped (brief §3).
@@ -45,11 +45,12 @@ Asked for: choose one endpoint from the rubric's list and write its contract wit
 `CONTRACT.md` in IA#3.
 Kept: the endpoint (a retried upload must not create two submissions: idempotency applies), the
 check order, the error table, D1–D5 in §6.
-Changed: `<what the reviewer changed — fill in after the human review>`.
+Changed: TODO(team) — what the reviewer changed in the draft before it was frozen.
 Rejected: a `Location` header pointing to `GET /v1/submissions/{id}`, which does not exist yet; and
 a `409 idempotency-key-in-flight` type: with the key row inserted inside the transaction, a
 concurrent request waits instead of failing, so that type could never be returned.
-By hand: `<reviewer>` reviewed the decisions D1–D5 before the contract was frozen.
+By hand: TODO(team: name) reviewed the decisions D1–D5 before the contract was frozen. PR #1 was
+approved from Ngọc's account (`angquoc`); the command was run by Claude Code after Ngọc agreed.
 
 ## 2026-11-10 — contract tests first, then the implementation
 
@@ -72,3 +73,30 @@ Changed:
 
 Rejected: nothing else.
 By hand: nothing in this step.
+
+## 2026-11-11 — the gate: required check, red PR, evidence
+
+Tool: Claude Code.
+Asked for: compare the repository with the PA#2 rubric, list what was missing, then open the pull
+requests that show the gate and draft `PA2.md` and `SELF_ASSESSMENT_REPORT.md`.
+Kept: the order of the pull requests (contract #1, tests-first #2, deliberate break #3, docs #4);
+merge commits only, so the commit ids cited in this log and in `.gitleaksignore` stay in `main`.
+Changed:
+
+- The gate could not bite. `main` was "protected", but the GitHub API showed
+  `required_status_checks: enforcement_level "off", contexts []`: a red pull request could have
+  been merged. PR #1 was blocked only because a review was required. Found by reading the
+  protection through the API instead of trusting the "protected" badge. The owner replaced it with
+  the ruleset `main`, with `checks` required, before the red PR was opened.
+- Squash and rebase merges were allowed; a squash would have rewritten the commits cited as
+  evidence. Turned off in the repository settings.
+- A fresh clone on Windows was red: with `core.autocrlf=true`, Git checked every file out with CRLF
+  and `npm run format:check` failed on 32 files that CI (Linux) passes. Added `.gitattributes`
+  (`* text=auto eol=lf`).
+- While renormalising the line endings, the assistant ran `git reset --hard` and wiped its own
+  uncommitted edits to this file; they were written again.
+
+Rejected: opening the deliberate-break PR while #2 was still open: its diff would have contained
+#2's two commits as well, hiding the one change that breaks the contract.
+By hand: the ruleset and the merge settings (the repository owner); the screenshots in
+`docs/evidence/`; approving the PRs.
