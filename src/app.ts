@@ -10,13 +10,25 @@ import {
   type Problem,
   type ProblemFieldError,
 } from './problem.js';
+import type { Db } from './db/client.js';
 import { healthRoutes } from './routes/health.js';
+import { submissionRoutes } from './routes/submissions.js';
 
 const PROBLEM_JSON = 'application/problem+json';
 
-export function buildApp(opts: FastifyServerOptions = {}): FastifyInstance {
+export interface AppDeps {
+  db: Db;
+  jwtSecret: string;
+}
+
+export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): FastifyInstance {
   // allErrors: a validation problem lists every broken field, not just the first.
-  const app = Fastify({ ...opts, ajv: { customOptions: { allErrors: true } } });
+  // coerceTypes off: Fastify's default would accept `"code": 12345` as the string "12345".
+  // Query strings and path params are therefore parsed by hand (see parseId).
+  const app = Fastify({
+    ...opts,
+    ajv: { customOptions: { allErrors: true, coerceTypes: false } },
+  });
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
     const body = toProblem(error);
@@ -32,7 +44,21 @@ export function buildApp(opts: FastifyServerOptions = {}): FastifyInstance {
     return reply.status(404).type(PROBLEM_JSON).send(body);
   });
 
+  // Bodies are JSON only: without this, Fastify would accept text/plain as a string (§2, 415).
+  app.removeContentTypeParser('text/plain');
+  // An empty JSON body is a missing body: let schema validation report it (pointer ""), in order.
+  const parseJson = app.getDefaultJsonParser('error', 'error');
+  app.removeContentTypeParser('application/json');
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (request, body, done) => {
+    if (body === '') {
+      done(null, undefined);
+      return;
+    }
+    void parseJson(request, body as string, done);
+  });
+
   void app.register(healthRoutes, { prefix: '/v1' });
+  void app.register(submissionRoutes, { prefix: '/v1', ...deps });
 
   return app;
 }

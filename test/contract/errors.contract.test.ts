@@ -1,35 +1,26 @@
-// Error model shared by every endpoint contract in docs/contract/ (section "Errors").
+// The error model shared by every contract in docs/contract/ (section 2).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PROBLEM_TYPE_BASE, startServer } from './helpers.js';
+import { expectProblem, startEnv, type TestEnv } from './helpers.js';
 
-let baseUrl: string;
-let close: () => Promise<void>;
-
+let env: TestEnv;
 beforeAll(async () => {
-  ({ baseUrl, close } = await startServer());
+  env = await startEnv();
 });
 afterAll(async () => {
-  await close();
+  await env.close();
 });
 
 describe('error model', () => {
-  it('§Errors a /v1 path that does not exist is 404 not-found as problem+json', async () => {
-    const res = await fetch(`${baseUrl}/v1/no-such-thing?x=1`);
-    expect(res.status).toBe(404);
-    expect(res.headers.get('content-type')).toMatch(/^application\/problem\+json/);
-    const body = (await res.json()) as Record<string, unknown>;
-    expect(body).toMatchObject({
-      type: `${PROBLEM_TYPE_BASE}not-found`,
-      title: 'Not found',
-      status: 404,
-    });
-    expect(typeof body.detail).toBe('string');
+  it('§2 a /v1 path that does not exist is 404 not-found as problem+json', async () => {
+    const res = await fetch(`${env.baseUrl}/v1/no-such-thing?x=1`);
+    const body = await expectProblem(res, 'not-found', 404);
+    expect(body.title).toBe('Not found');
   });
 });
 
 describe('GET /v1/health', () => {
   it('is 200 with status ok', async () => {
-    const res = await fetch(`${baseUrl}/v1/health`);
+    const res = await fetch(`${env.baseUrl}/v1/health`);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ status: 'ok' });
   });

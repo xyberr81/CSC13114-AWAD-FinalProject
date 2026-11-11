@@ -9,8 +9,11 @@ export const PROBLEMS = {
   unauthenticated: { status: 401, title: 'Authentication required' },
   forbidden: { status: 403, title: 'Forbidden' },
   'not-found': { status: 404, title: 'Not found' },
+  'idempotency-key-missing': { status: 400, title: 'Idempotency-Key required' },
+  'lab-closed': { status: 409, title: 'Lab closed' },
   'payload-too-large': { status: 413, title: 'Payload too large' },
   'unsupported-media-type': { status: 415, title: 'Unsupported media type' },
+  'idempotency-key-reused': { status: 422, title: 'Idempotency-Key reused' },
   internal: { status: 500, title: 'Internal error' },
 } as const;
 
