@@ -34,5 +34,5 @@ file explains it. Deny wins over ask, ask wins over allow.
 - CI needs no stored secret: its database is a throw-away service container with no password,
   and `JWT_SECRET` is generated for each run.
 - History scan: `gitleaks` over the full history before submitting — see `PA2.md`.
-- The model API key does not exist yet (PA#3). It will have a spending cap set in the provider's
-  console before first use, recorded in the README.
+- The model API key is an OpenRouter key with a $2 credit limit set on the key itself, recorded
+  in README §Model and cost. It lives only in `.env`, which the assistant may not read.

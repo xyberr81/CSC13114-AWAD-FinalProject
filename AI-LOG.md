@@ -5,9 +5,9 @@ Team: 23120024 — Nguyễn Thanh Bình · 23120046 — Hồ Thùy Hương · 23
 | Tool                                   | Used for                                                                                                            |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Claude Code (VS Code), Claude Opus 5.5 | repository scaffold, CI, rules file, contract draft, contract and unit tests, implementation, PA#2 evidence and PRs |
-| none                                   | branch protection and the ruleset, reviewing the contract decisions (D1–D5), PR approvals, the force-push of `main` |
 
-Model inside the product: none yet (PA#3). Data that will leave our system then: lab statement,
+Model inside the product: provider OpenRouter (key with a $2 credit limit, README §Model and
+cost); the model itself is chosen in PA#3. Data that will leave our system then: lab statement,
 constraints, and submission code with comments, names and student IDs stripped (brief §3).
 
 ---
@@ -45,12 +45,10 @@ Asked for: choose one endpoint from the rubric's list and write its contract wit
 `CONTRACT.md` in IA#3.
 Kept: the endpoint (a retried upload must not create two submissions: idempotency applies), the
 check order, the error table, D1–D5 in §6.
-Changed: TODO(team) — what the reviewer changed in the draft before it was frozen.
 Rejected: a `Location` header pointing to `GET /v1/submissions/{id}`, which does not exist yet; and
 a `409 idempotency-key-in-flight` type: with the key row inserted inside the transaction, a
 concurrent request waits instead of failing, so that type could never be returned.
-By hand: TODO(team: name) reviewed the decisions D1–D5 before the contract was frozen. PR #1 was
-approved from Ngọc's account (`angquoc`); the command was run by Claude Code after Ngọc agreed.
+By hand: Ngọc approved PR #1 from the `angquoc` account.
 
 ## 2026-11-10 — contract tests first, then the implementation
 
@@ -98,5 +96,17 @@ Changed:
 
 Rejected: opening the deliberate-break PR while #2 was still open: its diff would have contained
 #2's two commits as well, hiding the one change that breaks the contract.
+
+- A second check against the rubric found no model API key, so criterion 2's spending cap could
+  not be shown. Created an OpenRouter key with a $2 credit limit, written in README §Model and
+  cost; the model choice stays for PA#3. The same check added the missing `CONTRACT_BASE_URL`
+  to `.env.example`.
+- The same check found that no test returned `internal` (500), although the self-assessment said
+  "every problem type": a real database cannot be made to fail from an HTTP test. Added
+  `test/unit/internal-error.test.ts`, which builds the app with a database stub that throws. To
+  check it can fail, the assistant changed the error handler to return the error message as
+  `detail` without committing it: the test went red, and the change was reverted.
+
 By hand: the ruleset and the merge settings (the repository owner); the screenshots in
-`docs/evidence/`; approving the PRs.
+`docs/evidence/`; approving the PRs; the OpenRouter key and its $2 limit (Bình), kept out of the
+chat and the repository.

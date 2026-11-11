@@ -69,8 +69,9 @@ Self-assessment: [`SELF_ASSESSMENT_REPORT.md`](SELF_ASSESSMENT_REPORT.md).
   [`.gitleaksignore`](.gitleaksignore): a made-up example `Idempotency-Key` in the contract
   (`b6d2176`, line 123), not a secret.
 
-- Model API key: TODO (not created yet / created with a spending cap of … — see README §Model and
-  cost).
+- Model API key: an OpenRouter key with a **$2 credit limit** on the key, created 2026-11-11
+  ([screenshot](docs/evidence/openrouter-key-cap.png), README §Model and cost). It is only in
+  members' local `.env` files; CI does not have it.
 
 ## Rerunning the checks
 
@@ -81,3 +82,7 @@ Checked on 2026-11-11 from a fresh clone on Windows 11 (Node 24, Docker Desktop)
 check, type check, unit tests 23/23, contract tests 50/50. That run found one problem, fixed by
 [`.gitattributes`](.gitattributes): without it, Git for Windows checks files out with CRLF and
 `npm run format:check` fails on files that CI passes.
+
+Checked again on 2026-11-11 from a fresh clone of `docs/pa2` on Linux (Node 26, Docker), following
+the README step by step: lint, format check, type check, build, unit tests 23/23, contract tests
+50/50.

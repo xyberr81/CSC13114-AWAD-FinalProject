@@ -55,7 +55,7 @@ ever sent to the model.
 | Tests           | Vitest — unit tests and HTTP contract tests    |
 | Lint and format | ESLint (type-aware), Prettier, `tsc --noEmit`  |
 | CI              | GitHub Actions                                 |
-| Model           | not chosen yet (PA#3)                          |
+| Model           | via OpenRouter; model chosen in PA#3           |
 
 ## API
 
@@ -146,9 +146,14 @@ deployed server, also set `CONTRACT_BASE_URL`, e.g. `CONTRACT_BASE_URL=https://e
 
 ## Model and cost
 
-- Provider and model: not chosen yet — the LLM feature arrives in PA#3. Unit tests never call a real
-  model.
-- Spending cap on the API key: **to be set before the key is created** (PA#3), and recorded here.
+- Provider: [OpenRouter](https://openrouter.ai). Model: chosen in PA#3, when the LLM feature
+  arrives. Unit tests never call a real model.
+- Spending cap: the project's API key ("AWAD Final Project") has a **credit limit of $2 in
+  total**, set on the key in OpenRouter when it was created on 2026-11-11. The limit does not
+  reset, and the key expires on 2027-05-10
+  ([screenshot](docs/evidence/openrouter-key-cap.png): $0.000 used, never used). Once the $2 is
+  spent, OpenRouter refuses requests made with that key. The key lives only in each
+  member's `.env` (`LLM_API_KEY`), never in the repository, CI or the sandbox.
 - Cost of one lab (about 80 submissions): measured in PA#3.
 - Data sent to the model: the lab statement, the constraints, and the submission code with comments,
   names and student IDs stripped. Nothing else.
