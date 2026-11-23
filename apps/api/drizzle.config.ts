@@ -1,7 +1,7 @@
 import { defineConfig } from 'drizzle-kit';
 
 try {
-  process.loadEnvFile();
+  process.loadEnvFile(new URL('../../.env', import.meta.url));
 } catch {
   // no .env file: DATABASE_URL must come from the environment
 }

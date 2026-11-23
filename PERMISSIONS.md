@@ -6,15 +6,15 @@ file explains it. Deny wins over ask, ask wins over allow.
 ## Allowed — without asking
 
 - Read any file in the repository, except `.env` files (only `.env.example` is readable).
-- Edit `src/`, `test/unit/`, `README.md`, `AI-LOG.md`.
+- Edit `apps/api/src/`, `apps/api/test/unit/`, `README.md`, `AI-LOG.md`.
 - Run the checks: `npm run lint`, `format`, `format:check`, `typecheck`, `test`, `test:contract`,
   `check`, `build`, `db:generate`.
 - Read-only git: `status`, `diff`, `log`, `show`; create a branch; `add`; `commit` on a branch.
 
 ## Ask first — a human approves each time
 
-- Edit `docs/contract/` or `test/contract/` (the spec and the tests that judge the code).
-- Edit `.github/workflows/`, `package.json`, `drizzle/`, `CLAUDE.md`, `PERMISSIONS.md`,
+- Edit `docs/contract/` or `apps/api/test/contract/` (the spec and the tests that judge the code).
+- Edit `.github/workflows/`, `package.json` (any), `apps/api/drizzle/`, `CLAUDE.md`, `PERMISSIONS.md`,
   `.claude/settings.json`.
 - Install, remove or upgrade a dependency.
 - Run `npm run db:migrate`, any `docker` command, `curl`, or fetch a web page.

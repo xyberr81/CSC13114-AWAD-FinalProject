@@ -78,30 +78,29 @@ contract. A contract is changed only by its own pull request, never together wit
 │       └── ci.yml           # every check, on each pull request, on main and on pa* tags
 ├── docs/
 │   └── contract/            # frozen API contracts — the spec the code and the tests follow
-├── drizzle/                 # generated SQL migrations (do not edit by hand)
-├── src/
-│   ├── app.ts               # builds the Fastify app: JSON parsing, problem+json errors, routes
-│   ├── server.ts            # entry point: reads config, connects to PostgreSQL, listens
-│   ├── config.ts            # environment variables → typed config
-│   ├── problem.ts           # the error model: problem types, ProblemError
-│   ├── auth.ts              # bearer tokens (HS256 JWT), id parsing
-│   ├── idempotency.ts       # Idempotency-Key rules, request fingerprint
-│   ├── db/
-│   │   ├── schema.ts        # users, classes, class_members, labs, submissions, idempotency_keys
-│   │   └── client.ts        # PostgreSQL pool + Drizzle client
-│   └── routes/
-│       ├── health.ts        # GET /v1/health
-│       └── submissions.ts   # POST /v1/labs/{labId}/submissions
-├── test/
-│   ├── unit/                # fast tests: no database, no network, no real model calls
-│   └── contract/            # HTTP-only tests written from docs/contract/, against PostgreSQL
+├── apps/
+│   ├── api/                 # the backend (npm workspace @leetkob/api)
+│   │   ├── drizzle/         # generated SQL migrations (do not edit by hand)
+│   │   ├── src/
+│   │   │   ├── app.ts       # builds the Fastify app: JSON parsing, problem+json errors, routes
+│   │   │   ├── server.ts    # entry point: reads config, connects to PostgreSQL, listens
+│   │   │   ├── config.ts    # environment variables → typed config
+│   │   │   ├── problem.ts   # the error model: problem types, ProblemError
+│   │   │   ├── auth.ts      # bearer tokens (HS256 JWT), id parsing
+│   │   │   ├── idempotency.ts # Idempotency-Key rules, request fingerprint
+│   │   │   ├── db/          # schema.ts (every table), client.ts (pool + Drizzle)
+│   │   │   └── routes/      # one Fastify plugin per part, registered in app.ts
+│   │   ├── test/
+│   │   │   ├── unit/        # fast tests: no database, no network, no real model calls
+│   │   │   └── contract/    # HTTP-only tests written from docs/contract/, against PostgreSQL
+│   │   ├── drizzle.config.ts # migration tool config
+│   │   ├── tsconfig.json    # type check (src, test, configs); tsconfig.build.json: src → dist
+│   │   └── vitest.config.ts # test projects: unit, contract
+│   └── web/                 # the frontend (PA#4 onwards; not started)
 ├── .env.example             # every variable the app reads, without values
 ├── docker-compose.yml       # local PostgreSQL
-├── drizzle.config.ts        # migration tool config
-├── eslint.config.js         # lint rules
-├── tsconfig.json            # type check (src, test, configs)
-├── tsconfig.build.json      # build: src → dist
-├── vitest.config.ts         # test projects: unit, contract
+├── eslint.config.js         # lint rules, for every workspace
+├── package.json             # npm workspaces; the root scripts run each workspace's checks
 ├── CLAUDE.md                # rules for the coding assistant: stack, commands, conventions, never
 ├── PERMISSIONS.md           # what the assistant may do, must ask for, may never do
 ├── AI-LOG.md                # how AI was used, per task

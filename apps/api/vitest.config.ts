@@ -2,9 +2,9 @@ import { defineConfig } from 'vitest/config';
 
 // Local runs read .env if there is one; CI sets the variables itself.
 try {
-  process.loadEnvFile();
+  process.loadEnvFile(new URL('../../.env', import.meta.url));
 } catch {
-  // no .env file
+  // no .env at the repo root
 }
 
 export default defineConfig({

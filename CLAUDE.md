@@ -6,6 +6,8 @@ Lines marked _(story)_ come from something that actually went wrong; the AI-LOG 
 
 ## Stack
 
+- npm workspaces: the API is `apps/api`, a web frontend goes in `apps/web` (PA#4 onwards). Run
+  every command from the repo root; `.env` stays at the root.
 - TypeScript on Node 22 (ESM), Fastify 5, PostgreSQL 17 with Drizzle, Vitest, ESLint + Prettier.
 - TypeScript is pinned to `~6.0`: typescript-eslint does not support 7 yet. _(story: AI-LOG
   2026-11-10 "scaffold")_
@@ -38,7 +40,7 @@ CI runs the same commands. A task is done only when `npm run check` passes local
 - Ajv `coerceTypes` stays off: with Fastify's default, `"code": 12345` was stored as the string
   `"12345"`. Parse path and query values by hand (`parseId`). _(story: AI-LOG 2026-11-10
   "contract tests first")_
-- Schema changes go through `npm run db:generate`; never edit `drizzle/` by hand.
+- Schema changes go through `npm run db:generate`; never edit `apps/api/drizzle/` by hand.
 - Work on a branch and open a pull request; `main` only changes through a green PR.
 - No `Co-Authored-By` or "generated with" lines in commits or PRs: AI use is declared in
   `AI-LOG.md`. _(story: AI-LOG 2026-11-10 "scaffold")_
