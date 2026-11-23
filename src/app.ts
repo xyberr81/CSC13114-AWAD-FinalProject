@@ -11,7 +11,12 @@ import {
   type ProblemFieldError,
 } from './problem.js';
 import type { Db } from './db/client.js';
+import { adminRoutes } from './routes/admin.js';
+import { authRoutes } from './routes/auth.js';
 import { healthRoutes } from './routes/health.js';
+import { labRoutes } from './routes/labs.js';
+import { reviewQueueRoutes } from './routes/review-queue.js';
+import { submissionResultRoutes } from './routes/submission-results.js';
 import { submissionRoutes } from './routes/submissions.js';
 
 const PROBLEM_JSON = 'application/problem+json';
@@ -58,7 +63,12 @@ export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): Fastif
   });
 
   void app.register(healthRoutes, { prefix: '/v1' });
+  void app.register(authRoutes, { prefix: '/v1', ...deps });
+  void app.register(adminRoutes, { prefix: '/v1', ...deps });
+  void app.register(labRoutes, { prefix: '/v1', ...deps });
   void app.register(submissionRoutes, { prefix: '/v1', ...deps });
+  void app.register(submissionResultRoutes, { prefix: '/v1', ...deps });
+  void app.register(reviewQueueRoutes, { prefix: '/v1', ...deps });
 
   return app;
 }
