@@ -5,35 +5,54 @@ file explains it. Deny wins over ask, ask wins over allow. Anything in no list a
 
 ## Allowed — without asking
 
+The project uses the [pstack](https://github.com/michael-denyer/pstack-claude) skills, which run
+subagents in git worktrees, run single tests and open PRs. The allow list is wide enough for that
+to run without prompts; the ask and deny lists keep the spec, the judges of the code, the
+dependencies, the database history and `main` under a human.
+
 - Read any file in the repository, except `.env` files (only `.env.example` is readable).
-- Edit `src/`, `test/unit/`, `README.md`, `AI-LOG.md`.
-- Run the checks: `npm run lint`, `format`, `format:check`, `typecheck`, `test`, `test:contract`,
-  `check`, `build`, `db:generate`.
-- Read-only git: `status`, `diff`, `log`, `show`, `blame`, `rev-parse`, `merge-base`,
-  `remote -v`, list branches.
-- Local git: create or switch a branch; `fetch`, `pull`, `stash`; `add`; `commit` on a branch.
-- `git push` of a feature branch.
-- Read-only `gh pr`: `view`, `list`, `checks`, `diff`, `status`.
-- The local database: `docker compose up -d db`, `ps`, `logs`, `stop`, and `npm run db:migrate`
-  against it.
-- `curl` to the dev server on `localhost:3000` / `127.0.0.1:3000`.
+- Edit code, docs and config: `apps/`, `docs/`, top-level `*.md`, `*.js`, `*.ts`, `*.json`, the
+  ignore and Prettier files, `.env.example`, `.claude/skills/`. The ask list below wins over this.
+- Run any `npm run` script and `npm test` (with arguments, e.g. one test file), and `npx vitest`,
+  `eslint`, `prettier`, `tsc`, `drizzle-kit generate`.
+- Git: read (`status`, `diff`, `log`, `show`, `blame`, `grep`, `ls-files`, `rev-parse`,
+  `merge-base`, `patch-id`, `ls-remote`, `remote -v`, list branches); `switch`, `fetch`, `pull`,
+  `stash`, `add`, `commit`; `push` of a feature branch; `worktree list`, `add`, `prune`.
+- GitHub: `gh pr view`, `list`, `checks`, `diff`, `status`, `create`, `edit`, `ready`, `comment`;
+  `gh run view`, `list`, `watch`.
+- `docker`, except the commands denied below. `curl` to the dev server on `localhost:3000` /
+  `127.0.0.1:3000`. `jq`, `tail`, `uuidgen`.
+- The verify skill's scripts in `.claude/skills/verify/scripts/`: `up.sh`, `doctor.sh`, `req.sh`,
+  `sql.sh`, `down.sh`. They start a throw-away Postgres container and API without reading `.env`,
+  call only that API, run read-only queries (`sql.sh`), and remove only `leetkob-verify-*`
+  containers.
+- Web search, and fetching pages from the stack's documentation sites (GitHub, Fastify, Drizzle,
+  Vitest, Node.js, PostgreSQL, MDN, TypeScript, Ajv, Docker, Claude Code).
+- Per machine, in the git-ignored `.claude/settings.local.json`: `node` on the pstack plugin's own
+  scripts, whose path includes the home directory.
 
 ## Ask first — a human approves each time
 
-- Edit `docs/contract/` or `test/contract/` (the spec and the tests that judge the code).
-- Edit `.github/workflows/`, `package.json`, `drizzle/`, `CLAUDE.md`, `PERMISSIONS.md`,
-  `.claude/settings.json`.
-- Install, remove or upgrade a dependency.
-- Any other `docker` command, `curl` to any other host, or fetching a web page.
-- `gh pr` `create`, `comment`, `edit`, `merge`, `close`.
+- Edit `docs/contract/` or `apps/api/test/contract/` (the spec and the tests that judge the code).
+- Edit `.github/workflows/`, `package.json` (any), `package-lock.json`, `apps/api/drizzle/`.
+- Edit `CLAUDE.md`, `PERMISSIONS.md`, `SELF_ASSESSMENT_REPORT.md`, `.claude/settings.json`, and the
+  verify scripts (they run without asking, so changing them asks).
+- Install, remove or upgrade a dependency (`npm install`, `i`, `ci`, `uninstall`, `update`).
+- Git that rewrites or discards work: `rebase`, `reset`, `restore`, `checkout`, `clean`, `merge`,
+  `branch -d`, `worktree remove`.
+- `gh pr merge`, `gh pr close`.
+- Fetching any other web page; `curl` to any other host or port.
 
 ## Never — denied in the settings
 
 - Read or edit `.env`, `.env.local`, `.env.production`, anything under `~/.ssh`.
 - Edit eval data or labels (`eval/`).
-- `git push --force` / `-f`, `git push` to `main`, delete a branch or a tag. `main` is also
-  protected on GitHub (ruleset `main`).
-- `docker compose config` (it prints the values it reads from `.env`).
+- `git push --force` / `-f` / `--force-with-lease`, `git push` to `main`, delete a remote branch or
+  a tag, `git branch -D`. `main` is also protected on GitHub.
+- `docker compose config`, `docker inspect`, and `env` / `printenv` through `docker exec`: they
+  print container environments, which hold the values from `.env`.
+- `docker compose down -v`, `docker volume rm` / `prune`, `docker system prune`: they delete the
+  local database's data.
 - `gh api` (it can change repository settings such as branch protection).
 - `sudo`, `rm -rf`.
 

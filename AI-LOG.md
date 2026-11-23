@@ -113,29 +113,36 @@ chat and the repository.
 
 ---
 
-## 2026-11-23 — fewer permission prompts
+## 2026-11-23 — permissions for pstack and the verify skill
 
 Tool: Claude Code.
-Asked for: the permission prompts were too frequent for routine, read-only or local commands.
-Kept: moved to "allow" the read-only `gh pr` commands (`view`, `list`, `checks`, `diff`,
-`status`); the local database (`docker compose up -d db`, `ps`, `logs`, `stop`,
-`npm run db:migrate`); `curl` to the dev server on port 3000 only; local git (`switch`, `fetch`,
-`pull`, `stash`, `blame`, `rev-parse`, `merge-base`, `remote -v`, listing branches).
-`PERMISSIONS.md` updated to match.
+Asked for: the permission prompts were too frequent. The project now uses the pstack skills,
+which run subagents in git worktrees, run single tests and open PRs, and the verify skill, which
+drives a throw-away API through scripts; both should run without a human approving routine
+commands.
+Kept: a wide allow list (edits to code, docs, config and skills; every `npm run` script; `npx`
+for the check tools; local git, worktrees and feature-branch pushes; `gh pr` and `gh run` short of
+merging; `docker`; `curl` to the dev server; the verify scripts; web search and the stack's
+documentation sites). The ask list keeps a human on the spec, the contract tests, CI, the
+dependencies, `drizzle/`, the rules files, the verify scripts themselves, git that rewrites or
+discards work, and merging. `PERMISSIONS.md` rewritten to match.
 
-- Ask beats allow, so the wide ask rules `docker:*`, `curl:*` and `gh pr:*` would have kept
-  prompting for the narrower allows. They were removed; anything in no list still asks, and
-  `gh pr create`, `comment`, `edit`, `merge`, `close` are listed as ask explicitly.
-- `docker compose config` prints the values it reads from `.env`; it is now denied.
-- `PERMISSIONS.md` already said deleting a branch was denied, but only `git branch -D` was;
-  `-d` and `--delete` are now denied too.
+- Ask beats allow, so wide ask rules (`docker:*`, `curl:*`, `gh pr:*`, `WebFetch`) would have
+  kept prompting for every narrower allow. They were replaced by narrow ask rules.
+- The verify scripts run without asking, so editing them asks: otherwise an edit could change
+  what an allowed command does.
+- `docker compose config`, `docker inspect` and `env` / `printenv` through `docker exec` print
+  container environments, which hold the values from `.env`: denied. So are the commands that
+  delete the local database's data (`down -v`, `volume rm` / `prune`, `system prune`).
+- `curl` is allowed to `localhost:3000` / `127.0.0.1:3000` only. A rule ending in `localhost:*`
+  would also match `localhost.example.com`.
+- The pstack plugin's own `node` scripts sit under the home directory, so their rule lives in the
+  git-ignored `.claude/settings.local.json`; that file and `.claude/worktrees/` are now ignored.
+- Paths follow the `apps/api` layout from PR #5, so this lands after it.
 
-Rejected: allowing `git reset`, `restore` and `rebase` (they can discard uncommitted work), and
-`curl` to any host. Edits to the contract, contract tests, `package.json`, `drizzle/` and CI
-workflows and dependency installs still ask.
-
-- `git push` moved to allow as well, so feature branches push without a prompt. The existing
-  deny rules for force-pushes and pushes to `main` stay, and the GitHub ruleset on `main` refuses
-  a direct push regardless.
+Rejected: allowing `git rebase`, `reset`, `restore`, `checkout`, `clean` (they can discard
+work); `--force-with-lease` pushes, which pstack uses to restack PRs (CLAUDE.md: never
+force-push); `gh api`, since a GET-only rule cannot be written and it can change branch
+protection; `gh pr merge`.
 
 By hand: choosing which prompts to drop (Bình).
