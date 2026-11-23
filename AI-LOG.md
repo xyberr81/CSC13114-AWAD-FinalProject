@@ -110,3 +110,28 @@ Rejected: opening the deliberate-break PR while #2 was still open: its diff woul
 By hand: the ruleset and the merge settings (the repository owner); the screenshots in
 `docs/evidence/`; approving the PRs; the OpenRouter key and its $2 limit (Bình), kept out of the
 chat and the repository.
+
+---
+
+## 2026-11-23 — fewer permission prompts
+
+Tool: Claude Code.
+Asked for: the permission prompts were too frequent for routine, read-only or local commands.
+Kept: moved to "allow" the read-only `gh pr` commands (`view`, `list`, `checks`, `diff`,
+`status`); the local database (`docker compose up -d db`, `ps`, `logs`, `stop`,
+`npm run db:migrate`); `curl` to the dev server on port 3000 only; local git (`switch`, `fetch`,
+`pull`, `stash`, `blame`, `rev-parse`, `merge-base`, `remote -v`, listing branches).
+`PERMISSIONS.md` updated to match.
+
+- Ask beats allow, so the wide ask rules `docker:*`, `curl:*` and `gh pr:*` would have kept
+  prompting for the narrower allows. They were removed; anything in no list still asks, and
+  `gh pr create`, `comment`, `edit`, `merge`, `close` are listed as ask explicitly.
+- `docker compose config` prints the values it reads from `.env`; it is now denied.
+- `PERMISSIONS.md` already said deleting a branch was denied, but only `git branch -D` was;
+  `-d` and `--delete` are now denied too.
+
+Rejected: allowing `git reset`, `restore` and `rebase` (they can discard uncommitted work), and
+`curl` to any host. Edits to the contract, contract tests, `package.json`, `drizzle/` and CI
+workflows, dependency installs and `git push` still ask.
+
+By hand: choosing which prompts to drop (Bình).

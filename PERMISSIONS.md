@@ -1,7 +1,7 @@
 # Assistant permissions
 
 Tool: Claude Code. Enforced in [`.claude/settings.json`](.claude/settings.json) (committed); this
-file explains it. Deny wins over ask, ask wins over allow.
+file explains it. Deny wins over ask, ask wins over allow. Anything in no list asks.
 
 ## Allowed — without asking
 
@@ -9,7 +9,13 @@ file explains it. Deny wins over ask, ask wins over allow.
 - Edit `src/`, `test/unit/`, `README.md`, `AI-LOG.md`.
 - Run the checks: `npm run lint`, `format`, `format:check`, `typecheck`, `test`, `test:contract`,
   `check`, `build`, `db:generate`.
-- Read-only git: `status`, `diff`, `log`, `show`; create a branch; `add`; `commit` on a branch.
+- Read-only git: `status`, `diff`, `log`, `show`, `blame`, `rev-parse`, `merge-base`,
+  `remote -v`, list branches.
+- Local git: create or switch a branch; `fetch`, `pull`, `stash`; `add`; `commit` on a branch.
+- Read-only `gh pr`: `view`, `list`, `checks`, `diff`, `status`.
+- The local database: `docker compose up -d db`, `ps`, `logs`, `stop`, and `npm run db:migrate`
+  against it.
+- `curl` to the dev server on `localhost:3000` / `127.0.0.1:3000`.
 
 ## Ask first — a human approves each time
 
@@ -17,14 +23,15 @@ file explains it. Deny wins over ask, ask wins over allow.
 - Edit `.github/workflows/`, `package.json`, `drizzle/`, `CLAUDE.md`, `PERMISSIONS.md`,
   `.claude/settings.json`.
 - Install, remove or upgrade a dependency.
-- Run `npm run db:migrate`, any `docker` command, `curl`, or fetch a web page.
-- `git push`, `gh pr` (open, comment, merge).
+- Any other `docker` command, `curl` to any other host, or fetching a web page.
+- `git push`; `gh pr` `create`, `comment`, `edit`, `merge`, `close`.
 
 ## Never — denied in the settings
 
 - Read or edit `.env`, `.env.local`, `.env.production`, anything under `~/.ssh`.
 - Edit eval data or labels (`eval/`).
 - `git push --force` / `-f`, `git push` to `main`, delete a branch or a tag.
+- `docker compose config` (it prints the values it reads from `.env`).
 - `gh api` (it can change repository settings such as branch protection).
 - `sudo`, `rm -rf`.
 
