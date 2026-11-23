@@ -132,6 +132,10 @@ Kept: moved to "allow" the read-only `gh pr` commands (`view`, `list`, `checks`,
 
 Rejected: allowing `git reset`, `restore` and `rebase` (they can discard uncommitted work), and
 `curl` to any host. Edits to the contract, contract tests, `package.json`, `drizzle/` and CI
-workflows, dependency installs and `git push` still ask.
+workflows and dependency installs still ask.
+
+- `git push` moved to allow as well, so feature branches push without a prompt. The existing
+  deny rules for force-pushes and pushes to `main` stay, and the GitHub ruleset on `main` refuses
+  a direct push regardless.
 
 By hand: choosing which prompts to drop (Bình).

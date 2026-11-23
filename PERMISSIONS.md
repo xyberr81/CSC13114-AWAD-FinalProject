@@ -12,6 +12,7 @@ file explains it. Deny wins over ask, ask wins over allow. Anything in no list a
 - Read-only git: `status`, `diff`, `log`, `show`, `blame`, `rev-parse`, `merge-base`,
   `remote -v`, list branches.
 - Local git: create or switch a branch; `fetch`, `pull`, `stash`; `add`; `commit` on a branch.
+- `git push` of a feature branch.
 - Read-only `gh pr`: `view`, `list`, `checks`, `diff`, `status`.
 - The local database: `docker compose up -d db`, `ps`, `logs`, `stop`, and `npm run db:migrate`
   against it.
@@ -24,13 +25,14 @@ file explains it. Deny wins over ask, ask wins over allow. Anything in no list a
   `.claude/settings.json`.
 - Install, remove or upgrade a dependency.
 - Any other `docker` command, `curl` to any other host, or fetching a web page.
-- `git push`; `gh pr` `create`, `comment`, `edit`, `merge`, `close`.
+- `gh pr` `create`, `comment`, `edit`, `merge`, `close`.
 
 ## Never — denied in the settings
 
 - Read or edit `.env`, `.env.local`, `.env.production`, anything under `~/.ssh`.
 - Edit eval data or labels (`eval/`).
-- `git push --force` / `-f`, `git push` to `main`, delete a branch or a tag.
+- `git push --force` / `-f`, `git push` to `main`, delete a branch or a tag. `main` is also
+  protected on GitHub (ruleset `main`).
 - `docker compose config` (it prints the values it reads from `.env`).
 - `gh api` (it can change repository settings such as branch protection).
 - `sudo`, `rm -rf`.
