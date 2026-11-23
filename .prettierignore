@@ -3,3 +3,4 @@ coverage/
 drizzle/
 node_modules/
 package-lock.json
+.verify/
