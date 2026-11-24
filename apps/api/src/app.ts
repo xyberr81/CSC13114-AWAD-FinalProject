@@ -10,6 +10,7 @@ import {
   type Problem,
   type ProblemFieldError,
 } from './problem.js';
+import { keywords } from './ajv.js';
 import type { Db } from './db/client.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
@@ -32,7 +33,7 @@ export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): Fastif
   // Query strings and path params are therefore parsed by hand (see parseId).
   const app = Fastify({
     ...opts,
-    ajv: { customOptions: { allErrors: true, coerceTypes: false } },
+    ajv: { customOptions: { allErrors: true, coerceTypes: false, keywords } },
   });
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
