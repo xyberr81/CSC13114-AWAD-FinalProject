@@ -1,7 +1,15 @@
 // Reviews one Accepted submission against its lab's constraints. No database, no queue: the
 // review job and the checker CLI pass the data in and store what comes back.
 import { checkBanList } from './hard-rules.js';
-import type { ModelCall, ModelClient } from './limits.js';
+import {
+  ANSWER_SCHEMA,
+  ask,
+  judgeAnswer,
+  type JudgedAnswer,
+  type ModelCall,
+  type ModelClient,
+} from './limits.js';
+import { buildPrompt, redact, SYSTEM_PROMPT } from './prompt.js';
 import type { Evidence, UnsureReason, VerdictSource } from './verdict.js';
 
 export * from './verdict.js';
@@ -34,25 +42,43 @@ export interface ReviewOptions {
   model: ModelClient;
   /** The review job writes the entry to `model_calls`; the checker CLI writes it to a file. */
   logCall: (call: ModelCall) => void | Promise<void>;
+  /** Per model call; MODEL_TIMEOUT_MS when left out. */
+  timeoutMs?: number;
 }
+
+/** How long one model call may take. */
+export const MODEL_TIMEOUT_MS = 60_000;
 
 /** Hard rules first; only what they cannot decide is left to the model. */
 export async function review(input: ReviewInput, options: ReviewOptions): Promise<Verdict[]> {
   const verdicts: Verdict[] = [];
-  for (const { code: constraint, text } of input.constraints) {
-    const decided = await checkBanList(text, input.code);
-    if (decided) {
-      verdicts.push({ constraint, ...decided, source: 'hard_rule', unsureReason: null });
-    } else {
-      // Stub: the model call replaces this.
-      verdicts.push({
-        constraint,
-        verdict: 'unsure',
-        evidence: [],
-        source: 'model',
-        unsureReason: options.modelOff ? 'model_off' : 'model_unsure',
-      });
-    }
+  for (const constraint of input.constraints) {
+    const decided = await checkBanList(constraint.text, input.code);
+    verdicts.push(
+      decided
+        ? { constraint: constraint.code, ...decided, source: 'hard_rule', unsureReason: null }
+        : {
+            constraint: constraint.code,
+            ...(await askAbout(constraint, input, options)),
+            source: 'model',
+          },
+    );
   }
   return verdicts;
+}
+
+async function askAbout(
+  constraint: ReviewInput['constraints'][number],
+  { statement, code }: ReviewInput,
+  { modelOff, model, logCall, timeoutMs = MODEL_TIMEOUT_MS }: ReviewOptions,
+): Promise<JudgedAnswer> {
+  if (modelOff) return { verdict: 'unsure', evidence: [], unsureReason: 'model_off' };
+  const request = {
+    system: SYSTEM_PROMPT,
+    prompt: buildPrompt({ statement, constraint, code }),
+    schema: ANSWER_SCHEMA,
+  };
+  const result = await ask(model, request, { timeoutMs, logCall });
+  if (!result.ok) return { verdict: 'unsure', evidence: [], unsureReason: result.reason };
+  return judgeAnswer(result.text, constraint.code, { source: code, sent: redact(code) });
 }
