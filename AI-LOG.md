@@ -110,3 +110,33 @@ Rejected: opening the deliberate-break PR while #2 was still open: its diff woul
 By hand: the ruleset and the merge settings (the repository owner); the screenshots in
 `docs/evidence/`; approving the PRs; the OpenRouter key and its $2 limit (Bình), kept out of the
 chat and the repository.
+
+## 2026-11-24: sandbox, attack submissions, CI job
+
+Tool: Claude Code.
+Asked for: `judge()` as designed and approved by Ngọc: compile and run in one-shot containers, one
+attack submission per minimum of brief §5, tests before code, and a CI job of their own.
+Kept: 23 tests first, all red on the stub (`041f3ae`); the hardened `docker run` flags of session 6
+with the FAQ-05 limits; 10 control tests that take one limit away and check that the attack then
+gets through.
+Changed:
+
+- The assistant's network attack was wrong. `connect()` failed with ENETUNREACH under
+  `--network none`, but the program only looked at `SO_ERROR`, which is 0 for a refused connect, and
+  printed "connected". The test was red on a sandbox that did block it. Found by running the same
+  calls with and without a network and printing `errno`; fixed in a commit of its own, before the
+  sandbox code.
+- The plan was to compile within the 256 MB of FAQ-05. Measured: `#include <bits/stdc++.h>` peaks at
+  about 290 MB and `cc1plus` is killed. Compiling gets 512 MB; the submission still runs in 256 MB.
+- The plan did not say which process the submission is. Measured: as PID 1 it does not get SIGXCPU
+  (exit 137 one second later instead of 152), so the script starts it as a child of `sh`.
+- A unit test of the forbidden flags matched `--pids-limit` as `--pid`. Narrowed to `--pid=`.
+
+Rejected:
+
+- Pinning `tree-sitter` 0.21 to fit `tree-sitter-cpp`: Hương had already chosen `web-tree-sitter`.
+- An image of our own: the official `gcc` image, pinned by digest, needs nothing added.
+- A limit on submissions per minute: it would answer 429, which the contract does not have.
+
+By hand: approving the design and every commit message; restarting Docker Desktop, which had stopped
+answering on the development machine.
