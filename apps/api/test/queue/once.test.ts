@@ -97,7 +97,16 @@ describe('judged exactly once', () => {
 
   it('the judge job delivered twice at once, with different answers', async () => {
     const id = await submitted(env, await makeLab(env));
-    judge.mockImplementationOnce(answer('accepted')).mockImplementationOnce(answer('wrong_answer'));
+    // Neither run gets its answer before both are judging.
+    let judging = 0;
+    let release = () => {};
+    const bothJudging = new Promise<void>((resolve) => (release = resolve));
+    judge.mockImplementation(async (...args) => {
+      const status = ++judging === 1 ? 'accepted' : 'wrong_answer';
+      if (judging === 2) release();
+      await bothJudging;
+      return answer(status)(...args);
+    });
     await Promise.all([handleJudge(deps(), id), handleJudge(deps(), id)]);
     expect(judge).toHaveBeenCalledTimes(2);
 
