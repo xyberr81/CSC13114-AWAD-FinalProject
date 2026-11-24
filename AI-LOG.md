@@ -163,3 +163,19 @@ Found while running it, not changed: `§2 a body over 512 KiB is 413` fails on W
 ECONNRESET, before and after this change; CI (Linux) passes.
 
 By hand: approving the design and every commit message.
+
+## 2026-11-24: public deployment
+
+Tool: Claude Code.
+Asked for: a low-cost Azure server, HTTPS, and the workers without a Docker socket in any container.
+Kept: Compose for Caddy, the API and PostgreSQL; two systemd services for the workers.
+Changed: the first run on the server judged nothing. The docker client may not read the home
+directory of the service user and prints a warning before the container's start mark, which the code
+expected as the first bytes of stderr. All local and CI runs had passed. Found by running the attacks
+through the deployment; a test with a broken client configuration was red first. No submission got a
+wrong result meanwhile: they stayed in `judging` and were retried.
+Rejected: Malaysia, the nearest region, for Central India: the same machine costs about 40% less.
+Verified on the server: 13 attack submissions through HTTPS, the queue and the worker, 4 of them
+also against the harmful answer; worker stopped, submit, started: one set of verdicts; a reboot.
+
+By hand: the Azure account and login, the approval of the cost and of every commit message.
