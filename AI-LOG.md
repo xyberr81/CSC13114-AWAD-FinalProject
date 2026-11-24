@@ -126,8 +126,12 @@ Changed:
   printed "connected". The test was red on a sandbox that did block it. Found by running the same
   calls with and without a network and printing `errno`; fixed in a commit of its own, before the
   sandbox code.
-- The plan was to compile within the 256 MB of FAQ-05. Measured: `#include <bits/stdc++.h>` peaks at
-  about 290 MB and `cc1plus` is killed. Compiling gets 512 MB; the submission still runs in 256 MB.
+- The plan was to compile within the 256 MB of FAQ-05. Measured: a program with `std::regex` needs
+  about 290 MB and `cc1plus` is killed at 256 MB. Compiling gets 512 MB; the submission still runs in
+  256 MB.
+- Correction: this entry, a code comment and the PR first said that `<bits/stdc++.h>` alone needs
+  290 MB. The program measured also used `<regex>`. Ngọc asked whether 512 MB was really required;
+  measured again, the header alone and all 47 dev-set solutions compile within 256 MB.
 - The plan did not say which process the submission is. Measured: as PID 1 it does not get SIGXCPU
   (exit 137 one second later instead of 152), so the script starts it as a child of `sh`.
 - A unit test of the forbidden flags matched `--pids-limit` as `--pid`. Narrowed to `--pid=`.
