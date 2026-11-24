@@ -162,6 +162,11 @@ describe('traps: compliant code', () => {
       ['std::sort'],
       '#include <algorithm>\nusing std::sort;\nint main() {}',
     ],
+    [
+      'an own friend function defined inside its class',
+      ['std::swap'],
+      'using namespace std;\nstruct S { friend void swap(S& a, S& b) {} };\nint main() { S a, b; swap(a, b); }',
+    ],
     ['a longer identifier', ['for', 'do', 'goto'], 'int main() { int fork = 1, done = fork; }'],
     [
       'another namespace with the same member',
@@ -288,6 +293,7 @@ describe('violations', () => {
       'int main() {\nv.rbegin();\np->rbegin();\nf().rbegin();\nstd::rbegin(v);\n}',
       [2, 3, 4, 5],
     ],
+    ['a pointer to a method', ['rbegin'], 'int main() {\nauto f = &std::string::rbegin;\n}', [2]],
     [
       'every kind of loop, and goto',
       ['for', 'while', 'do', 'goto'],
@@ -353,6 +359,22 @@ describe('violations', () => {
 
   it.each(violations)('%s', async (_name, names, code, lines) => {
     expect(await cited(names, code)).toEqual(lines);
+  });
+});
+
+describe('hostile code', () => {
+  it('is null for macros that expand without end in sight', async () => {
+    const bomb = Array.from({ length: 40 }, (_, i) => `#define a${i + 1} a${i} a${i}`).join('\n');
+    expect(await checkBanList(ban('std::sort'), `${bomb}\nint main() { a40; }`)).toBeNull();
+  });
+
+  it('is null for an #if nested too deep', async () => {
+    expect(await checkBanList(ban('goto'), `#if ${'('.repeat(60_000)}1\n#endif`)).toBeNull();
+  });
+
+  it('survives code nested very deep', async () => {
+    const deep = `int main() { return ${'('.repeat(30_000)}1${')'.repeat(30_000)}; }`;
+    expect((await checkBanList(ban('std::sort'), deep))?.verdict).toBe('pass');
   });
 });
 
