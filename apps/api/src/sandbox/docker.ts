@@ -41,7 +41,8 @@ export function sandboxFlags({ memoryMb, tmpMb, cpuSeconds }: ContainerLimits): 
 
 export interface SandboxRun {
   flags: string[];
-  /** Prints START_MARK as its first line on stderr: the wall clock starts there. */
+  /** Prints START_MARK as its first line on stderr: the wall clock starts there. The docker client
+   * may print warnings of its own before it. */
   script: string;
   args?: string[];
   stdin: Buffer;
@@ -61,6 +62,7 @@ export interface SandboxOutcome {
 
 /** Starting a container must not count as the student's time. */
 export const START_MARK = 'leetkob-start';
+const START_LINE = new RegExp(`^${START_MARK}\\r?\\n`, 'm');
 const START_TIMEOUT_MS = 30_000;
 const DOCKER_TIMEOUT_MS = 30_000;
 const MAX_STDERR_BYTES = 64 * 1024;
@@ -191,7 +193,7 @@ function attach(id: string, run: SandboxRun): Promise<Attached> {
     });
     client.stderr.on('data', (chunk: Buffer) => {
       if (stderr.length < MAX_STDERR_BYTES) stderr += chunk.toString('utf8');
-      if (startedAt === null && stderr.startsWith(START_MARK)) onStart();
+      if (startedAt === null && START_LINE.test(stderr)) onStart();
     });
     client.on('error', (error) => {
       clearTimeout(timer);
@@ -206,7 +208,7 @@ function attach(id: string, run: SandboxRun): Promise<Attached> {
           timedOut,
           outputExceeded,
           stdout: Buffer.concat(stdout),
-          stderr: stderr.slice(START_MARK.length).trimStart(),
+          stderr: stderr.slice(stderr.search(START_LINE) + START_MARK.length).trimStart(),
           wallMs: Math.round(performance.now() - startedAt),
         });
       }
