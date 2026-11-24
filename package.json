@@ -20,6 +20,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm test --workspaces --if-present",
     "test:contract": "npm run test:contract -w @leetkob/api",
+    "test:sandbox": "npm run test:sandbox -w @leetkob/api",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run test:contract",
     "db:generate": "npm run db:generate -w @leetkob/api",
     "db:migrate": "npm run db:migrate -w @leetkob/api"
