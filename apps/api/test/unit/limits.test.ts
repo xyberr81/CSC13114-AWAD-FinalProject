@@ -216,6 +216,11 @@ describe('call log', () => {
     expect(calls).toMatchObject([{ response: 'error: HTTP 500' }]);
   });
 
+  it('drops NUL characters, which PostgreSQL cannot store', async () => {
+    const { calls } = await asked(() => Promise.resolve({ ...REPLY, text: 'a\0b' }));
+    expect(calls).toMatchObject([{ response: 'ab' }]);
+  });
+
   it('that cannot be written is an error, not a verdict', async () => {
     const write = ask({ name: 'm', complete: () => Promise.resolve(REPLY) }, REQUEST, {
       timeoutMs: 1000,
