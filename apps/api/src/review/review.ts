@@ -1,5 +1,6 @@
 // Reviews one Accepted submission against its lab's constraints. No database, no queue: the
 // review job and the checker CLI pass the data in and store what comes back.
+import { checkBanList } from './hard-rules.js';
 
 // Same values, in the same order, as the enums in db/schema.ts (a unit test compares them).
 export const VERDICT_VALUES = ['pass', 'violation', 'unsure'] as const;
@@ -83,15 +84,23 @@ export interface ReviewOptions {
   logCall: (call: ModelCall) => void | Promise<void>;
 }
 
-/** Stub: unsure about every constraint. The hard rules and the model call replace it. */
-export function review(input: ReviewInput, options: ReviewOptions): Promise<Verdict[]> {
-  return Promise.resolve(
-    input.constraints.map(({ code }) => ({
-      constraint: code,
-      verdict: 'unsure',
-      evidence: [],
-      source: 'model',
-      unsureReason: options.modelOff ? 'model_off' : 'model_unsure',
-    })),
-  );
+/** Hard rules first; only what they cannot decide is left to the model. */
+export async function review(input: ReviewInput, options: ReviewOptions): Promise<Verdict[]> {
+  const verdicts: Verdict[] = [];
+  for (const { code: constraint, text } of input.constraints) {
+    const decided = await checkBanList(text, input.code);
+    if (decided) {
+      verdicts.push({ constraint, ...decided, source: 'hard_rule', unsureReason: null });
+    } else {
+      // Stub: the model call replaces this.
+      verdicts.push({
+        constraint,
+        verdict: 'unsure',
+        evidence: [],
+        source: 'model',
+        unsureReason: options.modelOff ? 'model_off' : 'model_unsure',
+      });
+    }
+  }
+  return verdicts;
 }
