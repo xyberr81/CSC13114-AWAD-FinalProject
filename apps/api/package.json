@@ -15,7 +15,8 @@
     "test": "vitest run --project unit",
     "test:contract": "vitest run --project contract",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "checker": "tsx --env-file-if-exists=../../.env src/checker/main.ts"
   },
   "dependencies": {
     "@fastify/swagger": "^9.9.5",
