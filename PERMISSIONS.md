@@ -23,7 +23,7 @@ file explains it. Deny wins over ask, ask wins over allow.
 ## Never — denied in the settings
 
 - Read or edit `.env`, `.env.local`, `.env.production`, anything under `~/.ssh`.
-- Edit eval data or labels (`eval/`).
+- Edit the published dev set (`eval/leetkob-eval/`) or a committed run (`eval/runs/`).
 - `git push --force` / `-f`, `git push` to `main`, delete a branch or a tag.
 - `gh api` (it can change repository settings such as branch protection).
 - `sudo`, `rm -rf`.
