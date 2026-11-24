@@ -1,5 +1,6 @@
 // Compiles and runs one submission against its lab's tests. No database, no queue: the judge job
 // passes the data in and stores what comes back.
+import { runInSandbox, sandboxFlags, START_MARK, type SandboxOutcome } from './docker.js';
 
 // Same values as the enums in db/schema.ts (a unit test compares them).
 export const TEST_STATUSES = [
@@ -45,16 +46,111 @@ export interface JudgeResult {
  */
 export type Judge = (code: string, tests: JudgeTest[], limits: JudgeLimits) => Promise<JudgeResult>;
 
-// Stub: the sandbox replaces this.
-export const judge: Judge = (_code, tests) => {
-  if (tests.length === 0) return Promise.reject(new Error('A lab without tests cannot be judged'));
-  return Promise.resolve({
-    status: 'accepted',
-    tests: tests.map((t) => ({
-      testId: t.id,
-      status: 'accepted',
-      timeMs: null,
-      memoryKb: null,
-    })),
+const COMPILE_WALL_MS = 10_000;
+// Not a limit on the submission: compiling <bits/stdc++.h> alone peaks at about 290 MB.
+const COMPILE_MEMORY_MB = 512;
+const COMPILE_TMP_MB = 64;
+const MAX_BINARY_BYTES = 8 * 1024 * 1024;
+const RUN_TMP_MB = 16;
+const MAX_OUTPUT_BYTES = 1024 * 1024;
+
+const COMPILE_SCRIPT = `echo ${START_MARK} >&2
+cat > /tmp/main.cpp && g++ -std=c++17 -O2 -o /tmp/main /tmp/main.cpp && cat /tmp/main`;
+
+// stdin is the program, then its input. `exec` is left out on purpose: as PID 1 the program would
+// not get SIGXCPU. Its stderr is dropped, so it cannot fill ours.
+const RUN_SCRIPT = `head -c "$1" > /tmp/main && chmod +x /tmp/main && echo ${START_MARK} >&2
+/tmp/main 2> /dev/null
+exit $?`;
+
+const SIGXCPU_EXIT = 128 + 24;
+const SIGKILL_EXIT = 128 + 9;
+
+/** The compiled program, or null when the code does not compile. */
+export async function compile(code: string): Promise<Buffer | null> {
+  const outcome = await runInSandbox({
+    flags: sandboxFlags({
+      memoryMb: COMPILE_MEMORY_MB,
+      tmpMb: COMPILE_TMP_MB,
+      cpuSeconds: COMPILE_WALL_MS / 1000,
+    }),
+    script: COMPILE_SCRIPT,
+    stdin: Buffer.from(code, 'utf8'),
+    wallMs: COMPILE_WALL_MS,
+    maxOutputBytes: MAX_BINARY_BYTES,
   });
+  const ok = outcome.exitCode === 0 && !outcome.timedOut && !outcome.outputExceeded;
+  return ok ? outcome.stdout : null;
+}
+
+const cpuSecondsOf = (limits: JudgeLimits) => Math.ceil(limits.timeLimitMs / 1000);
+
+export const runFlags = (limits: JudgeLimits): string[] =>
+  sandboxFlags({
+    memoryMb: limits.memoryLimitMb,
+    tmpMb: RUN_TMP_MB,
+    cpuSeconds: cpuSecondsOf(limits),
+  });
+
+export function runProgram(
+  program: Buffer,
+  input: string,
+  limits: JudgeLimits,
+  flags: string[] = runFlags(limits),
+): Promise<SandboxOutcome> {
+  return runInSandbox({
+    flags,
+    script: RUN_SCRIPT,
+    args: [String(program.length)],
+    stdin: Buffer.concat([program, Buffer.from(input, 'utf8')]),
+    wallMs: limits.timeLimitMs * 3,
+    maxOutputBytes: MAX_OUTPUT_BYTES,
+  });
+}
+
+/** Token by token, whitespace ignored (leetkob-eval/README.md). */
+export function sameTokens(actual: string, expected: string): boolean {
+  const tokens = (text: string) => text.split(/\s+/).filter(Boolean);
+  const a = tokens(actual);
+  const b = tokens(expected);
+  return a.length === b.length && a.every((token, i) => token === b[i]);
+}
+
+export function statusOf(
+  outcome: SandboxOutcome,
+  expectedOutput: string,
+  limits: JudgeLimits,
+): TestStatus {
+  if (outcome.outputExceeded) return 'runtime_error';
+  if (outcome.outOfMemory) return 'memory_limit';
+  const cpuMs = cpuSecondsOf(limits) * 1000;
+  // SIGXCPU, or the hard limit's SIGKILL on a program that ignored SIGXCPU.
+  const cpuExceeded =
+    outcome.exitCode === SIGXCPU_EXIT ||
+    (outcome.exitCode === SIGKILL_EXIT && outcome.wallMs >= cpuMs);
+  if (outcome.timedOut || cpuExceeded) return 'time_limit';
+  if (outcome.exitCode !== 0) return 'runtime_error';
+  return sameTokens(outcome.stdout.toString('utf8'), expectedOutput) ? 'accepted' : 'wrong_answer';
+}
+
+export const judge: Judge = async (code, tests, limits) => {
+  if (tests.length === 0) throw new Error('A lab without tests cannot be judged');
+
+  const program = await compile(code);
+  if (program === null) return { status: 'compile_error', tests: [] };
+
+  const results: JudgeTestResult[] = [];
+  for (const test of tests) {
+    const outcome = await runProgram(program, test.input, limits);
+    results.push({
+      testId: test.id,
+      status: statusOf(outcome, test.expectedOutput, limits),
+      timeMs: outcome.wallMs,
+      memoryKb: null,
+    });
+  }
+  return {
+    status: results.find((r) => r.status !== 'accepted')?.status ?? 'accepted',
+    tests: results,
+  };
 };
