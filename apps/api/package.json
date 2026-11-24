@@ -17,6 +17,8 @@
     "test:queue": "vitest run --project queue",
     "test:sandbox": "vitest run --project sandbox",
     "sandbox:pull": "tsx src/sandbox/pull.ts",
+    "worker": "tsx --env-file-if-exists=../../.env src/worker/main.ts",
+    "start:worker": "node --env-file-if-exists=../../.env dist/worker/main.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },
