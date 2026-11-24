@@ -47,7 +47,8 @@ export interface JudgeResult {
 export type Judge = (code: string, tests: JudgeTest[], limits: JudgeLimits) => Promise<JudgeResult>;
 
 const COMPILE_WALL_MS = 10_000;
-// Not a limit on the submission: compiling <bits/stdc++.h> alone peaks at about 290 MB.
+// Not a limit on the submission, and above its 256 MB: a program that uses <regex> needs about
+// 290 MB to compile and would be a false compile error.
 const COMPILE_MEMORY_MB = 512;
 const COMPILE_TMP_MB = 64;
 const MAX_BINARY_BYTES = 8 * 1024 * 1024;
