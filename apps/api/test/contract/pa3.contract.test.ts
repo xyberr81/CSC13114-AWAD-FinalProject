@@ -1,7 +1,7 @@
 // Written from docs/contract/pa3-api.md. HTTP only; rows are arranged directly in the database.
 import { randomUUID } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
-import { and, count, eq } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   classMembers,
@@ -799,6 +799,67 @@ describe('PA3 §7 documentation', () => {
       expect(paths).toContain(p);
     expect(Object.values(spec.components.securitySchemes)).toContainEqual(
       expect.objectContaining({ type: 'http', scheme: 'bearer' }),
+    );
+  });
+});
+
+describe('PA3 §1 unknown fields', () => {
+  const extra = { id: 1, createdAt: 'yesterday', unknown: true };
+
+  it('§3.1 §4.1 are ignored, at every level', async () => {
+    const w = await world();
+    await json(
+      await call('POST', '/v1/classes', w.admin, { code: randomUUID(), name: 'x', ...extra }),
+      201,
+    );
+    const created = await json(
+      await call(
+        'POST',
+        `/v1/classes/${w.a.classId}/labs`,
+        w.a.ta,
+        lab({
+          ...extra,
+          classId: w.b.classId,
+          constraints: [{ code: 'C1', text: 'x', deduction: 1, ...extra, labId: w.b.labId }],
+          tests: [{ input: '', expectedOutput: '', ...extra, position: 9 }],
+        }),
+      ),
+      201,
+    );
+    expect(created).toMatchObject({ classId: w.a.classId });
+  });
+});
+
+describe('PA3 §6.1 §6.2 submittedAt', () => {
+  it('is the same instant in both, to the millisecond', async () => {
+    const w = await world();
+    const c = await constraint(w.a.labId, 'C1');
+    const id = await submission(w.a.labId, w.a.student.id);
+    await env.db
+      .update(submissions)
+      .set({ createdAt: sql`timestamptz '2026-01-01 00:00:00.123987Z'` })
+      .where(eq(submissions.id, id));
+    await verdict(id, c, 'violation');
+    const queue = await json<{ items: Json[] }>(
+      await call('GET', `/v1/labs/${w.a.labId}/review-queue`, w.a.ta),
+      200,
+    );
+    const review = await json(await call('GET', `/v1/submissions/${id}/review`, w.a.ta), 200);
+    expect(queue.items[0]!.submittedAt).toBe('2026-01-01T00:00:00.123Z');
+    expect(review.submittedAt).toBe('2026-01-01T00:00:00.123Z');
+  });
+});
+
+describe('PA3 §7 submitting from Swagger UI', () => {
+  it('offers the Idempotency-Key header', async () => {
+    const spec = (await (await fetch(`${env.baseUrl}/docs/json`)).json()) as {
+      paths: Record<string, { post: { parameters: Json[] } }>;
+    };
+    expect(spec.paths['/v1/labs/{labId}/submissions']!.post.parameters).toContainEqual(
+      expect.objectContaining({
+        in: 'header',
+        name: expect.stringMatching(/^idempotency-key$/i) as string,
+      }),
     );
   });
 });

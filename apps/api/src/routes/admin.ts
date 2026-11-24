@@ -80,9 +80,11 @@ export const adminRoutes: FastifyPluginCallback<RouteDeps> = (app, deps, done) =
       schema: { body: createClassBody, response: responses({ 201: classSchema }) },
     },
     async (request, reply) => {
+      // Named one by one: the body may carry fields that are columns but not the client's to set.
+      const { code, name } = request.body;
       const [created] = await db
         .insert(classes)
-        .values(request.body)
+        .values({ code, name })
         .onConflictDoNothing()
         .returning({ id: classes.id, code: classes.code, name: classes.name });
       if (!created) throw new ProblemError('class-code-taken', 'A class with this code exists.');

@@ -133,13 +133,30 @@ export const labRoutes: FastifyPluginCallback<RouteDeps> = (app, deps, done) => 
     },
     async (request, reply) => {
       const { target: cls } = classTa.of(request);
-      const { deadline, constraints, tests, ...fields } = request.body;
+      // Named one by one: the body may carry fields that are columns but not the client's to set.
+      const { title, statement, deadline, timeLimitMs, memoryLimitMb } = request.body;
+      const constraints = request.body.constraints.map(({ code, text, deduction }) => ({
+        code,
+        text,
+        deduction,
+      }));
+      const tests = request.body.tests.map(({ input, expectedOutput }) => ({
+        input,
+        expectedOutput,
+      }));
 
       // The lab, its constraints and its tests are stored together or not at all.
       const lab = await db.transaction(async (tx) => {
         const [created] = await tx
           .insert(labs)
-          .values({ ...fields, classId: cls.id, deadline: new Date(deadline) })
+          .values({
+            classId: cls.id,
+            title,
+            statement,
+            deadline: new Date(deadline),
+            timeLimitMs,
+            memoryLimitMb,
+          })
           .returning();
         await tx
           .insert(labConstraints)

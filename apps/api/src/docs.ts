@@ -27,6 +27,15 @@ const ROUTES: Record<string, [tag: string, summary: string]> = {
   'GET /v1/submissions/:submissionId/review': ['review', 'Code and every verdict (TA)'],
 };
 
+/** Swagger UI can only send headers it knows. The route itself checks the key, so this requires none. */
+const SUBMIT = 'POST /v1/labs/:labId/submissions';
+const IDEMPOTENCY_HEADER = {
+  type: 'object',
+  properties: {
+    'idempotency-key': { type: 'string', description: 'Required. A new UUID per submission.' },
+  },
+};
+
 /** Without a token: the two routes a client can call before it has one. */
 const OPEN = new Set(['GET /v1/health', 'POST /v1/auth/login']);
 
@@ -40,6 +49,7 @@ function describeRoute(route: RouteOptions) {
     tags: [tag],
     summary,
     security: OPEN.has(key) ? [] : [{ [BEARER]: [] }],
+    ...(key === SUBMIT ? { headers: IDEMPOTENCY_HEADER } : {}),
     ...route.schema,
   };
 }

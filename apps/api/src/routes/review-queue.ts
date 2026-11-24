@@ -193,7 +193,7 @@ export const reviewQueueRoutes: FastifyPluginCallback<RouteDeps> = (app, deps, d
         ),
         items as (
           select v.submission_id, v.constraint_id, c.student_id, u.email as student_email,
-                 (extract(epoch from c.created_at) * 1000)::bigint as submitted_ms,
+                 floor(extract(epoch from c.created_at) * 1000)::bigint as submitted_ms,
                  lc.code, lc.text, lc.deduction,
                  v.verdict, v.evidence, v.source, v.unsure_reason
           from chosen
