@@ -5,7 +5,7 @@
   "description": "LeeTKOB — constraint review for Accepted C++ lab submissions (CSC13114 class project)",
   "type": "module",
   "engines": {
-    "node": ">=22.5"
+    "node": ">=22.12"
   },
   "workspaces": [
     "apps/*"
