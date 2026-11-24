@@ -30,6 +30,19 @@ describe('POST /v1/labs/{labId}/submissions', () => {
     expect(await env.jobs('judge', id)).toHaveLength(1);
   });
 
+  it('§4.1 a replay after judging has the body of the first response', async () => {
+    const lab = await makeLab(env);
+    const key = randomUUID();
+    const first = await submit(env, lab, key);
+    const { id } = first.json<{ id: number }>();
+    for (const status of ['judging', 'accepted', 'wrong_answer'] as const) {
+      await env.db.update(submissions).set({ status }).where(eq(submissions.id, id));
+      const replay = await submit(env, lab, key);
+      expect(replay.statusCode).toBe(201);
+      expect(replay.json()).toEqual(first.json());
+    }
+  });
+
   it('eight concurrent requests with one key enqueue one job', async () => {
     const lab = await makeLab(env);
     const key = randomUUID();

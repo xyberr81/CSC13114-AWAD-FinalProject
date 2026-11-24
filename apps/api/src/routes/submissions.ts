@@ -47,7 +47,8 @@ function toJson(s: SubmissionRow) {
     id: s.id,
     labId: s.labId,
     language: s.language,
-    status: s.status,
+    // §3: this endpoint only ever returns `queued`, also when a replay comes after judging (§4.1).
+    status: 'queued',
     createdAt: s.createdAt.toISOString(),
   };
 }
