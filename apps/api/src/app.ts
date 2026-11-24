@@ -12,6 +12,7 @@ import {
 } from './problem.js';
 import { keywords } from './ajv.js';
 import type { Db } from './db/client.js';
+import { documentApi } from './docs.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
 import { healthRoutes } from './routes/health.js';
@@ -62,6 +63,8 @@ export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): Fastif
     }
     void parseJson(request, body as string, done);
   });
+
+  documentApi(app);
 
   void app.register(healthRoutes, { prefix: '/v1' });
   void app.register(authRoutes, { prefix: '/v1', ...deps });
