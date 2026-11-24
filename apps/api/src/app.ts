@@ -11,6 +11,7 @@ import {
   type ProblemFieldError,
 } from './problem.js';
 import type { Db } from './db/client.js';
+import type { JobQueue } from './queue/queue.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
 import { healthRoutes } from './routes/health.js';
@@ -24,6 +25,8 @@ const PROBLEM_JSON = 'application/problem+json';
 export interface AppDeps {
   db: Db;
   jwtSecret: string;
+  /** Left out only by tests that do not judge: submissions then stay queued. */
+  queue?: JobQueue;
 }
 
 export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): FastifyInstance {
