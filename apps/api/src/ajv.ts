@@ -32,13 +32,13 @@ function report<T>(
 }
 
 /** `'any'`: no U+0000. `'nonblank'`: also a character that is not whitespace. */
-const text: Check<string> = (mode, data) => {
+const text: Check<string> = (mode, data, _parent, cxt) => {
   const errors: [string, string][] = [];
   if (data.includes('\u0000')) errors.push(['', 'must not contain the character U+0000']);
   if (mode === 'nonblank' && !/\S/.test(data)) {
     errors.push(['', 'must contain a character that is not whitespace']);
   }
-  return report(text, 'x-text', errors);
+  return report(text, 'x-text', errors, cxt?.instancePath);
 };
 
 const RFC3339 =
@@ -69,13 +69,14 @@ export function parseInstant(value: string): Date | null {
   return at >= MIN_INSTANT && at <= MAX_INSTANT ? new Date(at) : null;
 }
 
-const instant: Check<string> = (_schema, data) =>
+const instant: Check<string> = (_schema, data, _parent, cxt) =>
   report(
     instant,
     'x-instant',
     parseInstant(data)
       ? []
       : [['', 'must be an RFC 3339 date-time with an offset, such as 2026-12-01T15:00:00Z']],
+    cxt?.instancePath,
   );
 
 /** An array of objects whose `code` differs; each repeat gets an error at its own `code`. */
