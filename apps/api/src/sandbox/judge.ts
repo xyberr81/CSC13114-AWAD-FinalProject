@@ -57,11 +57,19 @@ const MAX_OUTPUT_BYTES = 1024 * 1024;
 const COMPILE_SCRIPT = `echo ${START_MARK} >&2
 cat > /tmp/main.cpp && g++ -std=c++17 -O2 -o /tmp/main /tmp/main.cpp && cat /tmp/main`;
 
+const OOM_MARK = 'leetkob-oom';
+
 // stdin is the program, then its input. `exec` is left out on purpose: as PID 1 the program would
-// not get SIGXCPU. Its stderr is dropped, so it cannot fill ours.
+// not get SIGXCPU. Its stderr is dropped, so it cannot fill ours. The kernel's own count of OOM kills
+// is read at the end, because Docker's OOMKilled flag can come late; shell builtins only, since the
+// program may have used up every process.
 const RUN_SCRIPT = `head -c "$1" > /tmp/main && chmod +x /tmp/main && echo ${START_MARK} >&2
 /tmp/main 2> /dev/null
-exit $?`;
+code=$?
+while read -r event count; do
+  [ "$event" = oom_kill ] && [ "$count" != 0 ] && echo ${OOM_MARK} >&2
+done < /sys/fs/cgroup/memory.events
+exit $code`;
 
 const SIGXCPU_EXIT = 128 + 24;
 const SIGKILL_EXIT = 128 + 9;
@@ -92,13 +100,13 @@ export const runFlags = (limits: JudgeLimits): string[] =>
     cpuSeconds: cpuSecondsOf(limits),
   });
 
-export function runProgram(
+export async function runProgram(
   program: Buffer,
   input: string,
   limits: JudgeLimits,
   flags: string[] = runFlags(limits),
 ): Promise<SandboxOutcome> {
-  return runInSandbox({
+  const outcome = await runInSandbox({
     flags,
     script: RUN_SCRIPT,
     args: [String(program.length)],
@@ -106,6 +114,7 @@ export function runProgram(
     wallMs: limits.timeLimitMs * 3,
     maxOutputBytes: MAX_OUTPUT_BYTES,
   });
+  return { ...outcome, outOfMemory: outcome.outOfMemory || outcome.stderr.includes(OOM_MARK) };
 }
 
 /** Token by token, whitespace ignored (leetkob-eval/README.md). */
