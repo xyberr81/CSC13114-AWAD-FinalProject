@@ -140,3 +140,22 @@ Rejected:
 
 By hand: approving the design and every commit message; restarting Docker Desktop, which had stopped
 answering on the development machine.
+
+## 2026-11-24: queue, worker, judged exactly once
+
+Tool: Claude Code.
+Asked for: the pg-boss queue, a worker process with the judge and review jobs, and a test that a
+submission is judged exactly once, as designed and approved by Ngọc.
+Kept: 18 queue tests first, red because the modules did not exist (`3834e37`); the judge job is sent
+in the transaction that stores the submission; two worker processes on the server, so that the one
+that may use Docker has no model key and refuses to start with one.
+Changed: 18 of 18 passed on the first run, which proved little. Ten faults were put in one at a time
+(for example `ON CONFLICT` removed, the job sent outside the transaction). Nine were caught at once;
+the tenth survived because the fault was written wrong (it enqueued another submission), and was
+caught once it was corrected.
+Rejected: a required `queue` in `AppDeps`: it would have forced an edit of the contract tests'
+helper, so it is optional there and always passed by `server.ts`.
+Found while running it, not changed: `§2 a body over 512 KiB is 413` fails on Windows only, with
+ECONNRESET, before and after this change; CI (Linux) passes.
+
+By hand: approving the design and every commit message.
