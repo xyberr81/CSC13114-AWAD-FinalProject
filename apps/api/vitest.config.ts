@@ -20,6 +20,17 @@ export default defineConfig({
         },
       },
       {
+        // Needs PostgreSQL, like the contract tests; no Docker.
+        test: {
+          name: 'queue',
+          include: ['test/queue/**/*.test.ts'],
+          globalSetup: ['test/contract/global-setup.ts'],
+          fileParallelism: false,
+          testTimeout: 30_000,
+          hookTimeout: 30_000,
+        },
+      },
+      {
         // Needs Docker, so it is not part of `npm test`; CI runs it as its own job.
         test: {
           name: 'sandbox',
