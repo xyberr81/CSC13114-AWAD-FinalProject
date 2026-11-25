@@ -215,7 +215,8 @@ node eval/leetkob-eval/eval.mjs --data eval/leetkob-eval --predictions predictio
 | `MODEL_OFF=1`       | hard rules only: every semantic constraint is `unsure`, and no network is needed |
 
 Otherwise it needs `LLM_PROVIDER=openrouter`, `LLM_MODEL` and `LLM_API_KEY` from `.env`. The summary
-goes to standard error. Exit code: 0 done, 1 some pair failed, 2 wrong usage or missing settings.
+goes to standard error. Exit code: 0 done, 1 some pair failed, 2 wrong usage or missing settings;
+through `npm` every failure is 1.
 
 The same command as an image, without network and without a key:
 
