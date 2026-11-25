@@ -77,6 +77,7 @@ export async function handleReview(
         evidence: verdict.evidence,
         source: verdict.source,
         unsureReason: verdict.unsureReason,
+        explanation: verdict.explanation,
       })
       .onConflictDoNothing();
   }
