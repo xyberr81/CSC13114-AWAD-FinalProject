@@ -1,0 +1,48 @@
+# Public deployment: HTTPS, the API and PostgreSQL. Values come from /etc/leetkob (see setup.sh).
+name: leetkob
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    env_file: /etc/leetkob/postgres.env
+    # The workers run on the host, so PostgreSQL listens there, and nowhere else.
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    restart: unless-stopped
+    env_file: /etc/leetkob/api.env
+    environment:
+      HOST: 0.0.0.0
+      PORT: '3000'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    env_file: /etc/leetkob/caddy.env
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  caddy_data:

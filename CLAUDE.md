@@ -11,7 +11,8 @@ Lines marked _(story)_ come from something that actually went wrong; the AI-LOG 
 - TypeScript on Node 22 (ESM), Fastify 5, PostgreSQL 17 with Drizzle, Vitest, ESLint + Prettier.
 - TypeScript is pinned to `~6.0`: typescript-eslint does not support 7 yet. _(story: AI-LOG
   2026-11-10 "scaffold")_
-- Planned (PA#3): pg-boss queue, Docker sandbox with `gcc`, tree-sitter-cpp hard rules.
+- pg-boss queue on the same PostgreSQL, Docker sandbox with `gcc`. Planned (PA#3): tree-sitter-cpp
+  hard rules.
 
 ## Commands
 
@@ -23,9 +24,12 @@ Lines marked _(story)_ come from something that actually went wrong; the AI-LOG 
 | type check     | `npm run typecheck`     |
 | unit tests     | `npm test`              |
 | contract tests | `npm run test:contract` |
+| queue tests    | `npm run test:queue`    |
+| sandbox tests  | `npm run test:sandbox`  |
 | new migration  | `npm run db:generate`   |
 
-CI runs the same commands. A task is done only when `npm run check` passes locally.
+CI runs the same commands. A task is done only when `npm run check` passes locally; a change to
+`apps/api/src/sandbox/` also needs `npm run test:sandbox` (Docker).
 
 ## Conventions
 
@@ -55,6 +59,17 @@ CI runs the same commands. A task is done only when `npm run check` passes local
   AI-LOG 2026-11-10 "contract tests first")_
 - Never read or print `.env`; never commit a secret. New variables go in `.env.example`, empty.
 - Never run student code outside the sandbox.
+- Never put `--privileged`, `-v /var/run/docker.sock`, `--env-file` or `-e MODEL_API_KEY` on the
+  sandbox command.
+- Never write a memory test that does not read the memory back: the compiler drops the allocation
+  and the test passes without a limit.
+- Never change `eval.mjs`, `labels.jsonl` or a `.cpp` file of the dev set.
+- Never name a dev-set problem or solution, or quote its code, in a prompt or a hard rule.
+- Never loosen a test or an eval case in the commit that turns it green.
+- Never present a mocked run as a real one: a real dev run has the provider's request ids in its
+  call log.
+- Never write a limit or a number as measured before measuring exactly that. _(story: AI-LOG
+  2026-11-24 "sandbox": a header was blamed for the memory of `<regex>`)_
 - Never push to `main`, force-push, or touch branch protection. _(story: AI-LOG 2026-11-10
   "scaffold" — a history rewrite of `main` needed a force-push; it was refused and done by a
   human, before protection was on)_

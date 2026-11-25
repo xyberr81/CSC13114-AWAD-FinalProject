@@ -6,10 +6,12 @@ import type { Db } from '../db/client.js';
 import { classMembers, idempotencyKeys, labs, submissions, users } from '../db/schema.js';
 import { isValidIdempotencyKey, submissionFingerprint } from '../idempotency.js';
 import { ProblemError } from '../problem.js';
+import type { JobQueue } from '../queue/queue.js';
 
 export interface SubmissionRouteDeps {
   db: Db;
   jwtSecret: string;
+  queue?: JobQueue;
 }
 
 interface SubmitRoute {
@@ -45,14 +47,15 @@ function toJson(s: SubmissionRow) {
     id: s.id,
     labId: s.labId,
     language: s.language,
-    status: s.status,
+    // §3: this endpoint only ever returns `queued`, also when a replay comes after judging (§4.1).
+    status: 'queued',
     createdAt: s.createdAt.toISOString(),
   };
 }
 
 export const submissionRoutes: FastifyPluginCallback<SubmissionRouteDeps> = (
   app,
-  { db, jwtSecret },
+  { db, jwtSecret, queue },
   done,
 ) => {
   const callers = new WeakMap<FastifyRequest, Caller>();
@@ -159,6 +162,7 @@ export const submissionRoutes: FastifyPluginCallback<SubmissionRouteDeps> = (
           .update(idempotencyKeys)
           .set({ submissionId: created!.id })
           .where(and(eq(idempotencyKeys.userId, caller.id), eq(idempotencyKeys.key, key)));
+        await queue?.sendJudge(tx, created!.id);
         return { replayed: false, submission: created! };
       });
 
