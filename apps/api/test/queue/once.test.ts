@@ -63,7 +63,12 @@ const WAIT = { timeout: 20_000, interval: 100 };
 async function expectOneSet(id: number) {
   expect(await statusOf(env, id)).toBe('accepted');
   expect(await results(id)).toHaveLength(2);
-  expect((await verdictsOf(env, id)).map((v) => v.verdict)).toEqual(['unsure', 'unsure']);
+  // With the model off: C1 is a ban list, which a hard rule decides; C2 is semantic.
+  const stored = (await verdictsOf(env, id)).sort((a, b) => a.constraintId - b.constraintId);
+  expect(stored.map((v) => [v.verdict, v.source, v.unsureReason])).toEqual([
+    ['pass', 'hard_rule', null],
+    ['unsure', 'model', 'model_off'],
+  ]);
   expect(await env.jobs('review', id)).toHaveLength(1);
 }
 
