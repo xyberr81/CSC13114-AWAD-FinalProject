@@ -10,7 +10,9 @@ import {
   type Problem,
   type ProblemFieldError,
 } from './problem.js';
+import { keywords } from './ajv.js';
 import type { Db } from './db/client.js';
+import { documentApi } from './docs.js';
 import type { JobQueue } from './queue/queue.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
@@ -35,7 +37,7 @@ export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): Fastif
   // Query strings and path params are therefore parsed by hand (see parseId).
   const app = Fastify({
     ...opts,
-    ajv: { customOptions: { allErrors: true, coerceTypes: false } },
+    ajv: { customOptions: { allErrors: true, coerceTypes: false, keywords } },
   });
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
@@ -64,6 +66,8 @@ export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): Fastif
     }
     void parseJson(request, body as string, done);
   });
+
+  documentApi(app);
 
   void app.register(healthRoutes, { prefix: '/v1' });
   void app.register(authRoutes, { prefix: '/v1', ...deps });

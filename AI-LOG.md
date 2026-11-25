@@ -111,6 +111,29 @@ By hand: the ruleset and the merge settings (the repository owner); the screensh
 `docs/evidence/`; approving the PRs; the OpenRouter key and its $2 limit (Bình), kept out of the
 chat and the repository.
 
+## 2026-11-24 — PA#3 API: accounts, classes, labs, results, review queue
+
+Tool: Claude Code (Opus 5.5 for the contract, the contract tests and the review; a Sonnet subagent for
+the implementation).
+Asked for: section 3.1 of the PA#3 plan, after finding that no branch had any of it.
+Kept: `docs/contract/pa3-api.md`, then its contract tests run red (101 of 163 failing), then the code,
+one part per commit; a role × ownership matrix with one test per cell; six own eval cases.
+Changed:
+
+- The implementation passed every test and still spread the request body into the insert. Reading the
+  diff showed that a body with `createdAt` reaches the database layer, against "the server ignores
+  fields it does not know". Added a test, then named every column.
+- `submittedAt` was rounded in the review queue and truncated in the submission review, so the two
+  could differ by 1 ms. Added a test and used `floor`.
+- Swagger UI offered no `Idempotency-Key` field, so nobody could submit from `/docs`. Added a test
+  and the header to the OpenAPI document.
+- Own case `s03` looped a fixed 20 times, so its C2 label could be argued either way. Rewrote the
+  case, as the dev set's README asks.
+
+Rejected: a review queue that returns the newest Accepted submission (D3 of PA#2): FAQ-02 counts the
+last submission, whatever its result.
+By hand: Bình approved editing `docs/contract/`, the contract tests and the `eval/` permission rule.
+
 ## 2026-11-24: sandbox, attack submissions, CI job
 
 Tool: Claude Code.
