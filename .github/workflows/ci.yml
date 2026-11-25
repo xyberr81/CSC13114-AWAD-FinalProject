@@ -56,3 +56,21 @@ jobs:
         run: npm run test:contract
       - name: build
         run: npm run build
+
+  # The attack submissions, against real containers. A job of its own: it needs Docker, the checks
+  # above do not.
+  sandbox:
+    name: sandbox
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: fetch the sandbox image
+        run: npm run sandbox:pull
+      - name: sandbox tests
+        run: npm run test:sandbox

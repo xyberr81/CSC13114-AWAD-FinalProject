@@ -19,6 +19,15 @@ export default defineConfig({
           testTimeout: 15_000,
         },
       },
+      {
+        // Needs Docker, so it is not part of `npm test`; CI runs it as its own job.
+        test: {
+          name: 'sandbox',
+          include: ['test/sandbox/**/*.test.ts'],
+          fileParallelism: false,
+          testTimeout: 90_000,
+        },
+      },
     ],
   },
 });
