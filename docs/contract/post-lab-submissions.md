@@ -171,8 +171,8 @@ Content-Type: application/json
 ```
 
 The body is a Submission (§3). A student may submit to the same lab many times; each request with
-a new `Idempotency-Key` creates a new submission. Which submission is reviewed is decided in PA#3
-(§6, D3).
+a new `Idempotency-Key` creates a new submission. The last one before the deadline is the one that
+counts (§6, D3).
 
 **Idempotency**
 
@@ -208,13 +208,13 @@ a new `Idempotency-Key` creates a new submission. Which submission is reviewed i
 
 ## 6. Decisions where the brief is silent
 
-| #   | Question                                            | Decision                                                                                             | Source        |
-| --- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------- |
-| D1  | Can a student submit after the deadline?            | No: `409 lab-closed`. A replay of a submission accepted before the deadline still returns its `201`. | team decision |
-| D2  | 403 or 404 for a lab outside the student's classes? | `404`, identical to a missing lab, so labs of other classes cannot be discovered.                    | team decision |
-| D3  | Which of several submissions is reviewed?           | Not decided by this endpoint; every submission is stored. PA#3 will review the latest Accepted one.  | team decision |
-| D4  | How large may a submission be?                      | 65 536 characters of code; 512 KiB of body.                                                          | team decision |
-| D5  | How does a student get a token?                     | Out of scope for PA#2; a login endpoint comes with accounts in PA#3.                                 | team decision |
+| #   | Question                                            | Decision                                                                                                                                                                | Source        |
+| --- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| D1  | Can a student submit after the deadline?            | No: `409 lab-closed`. A replay of a submission accepted before the deadline still returns its `201`.                                                                    | team decision |
+| D2  | 403 or 404 for a lab outside the student's classes? | `404`, identical to a missing lab, so labs of other classes cannot be discovered.                                                                                       | team decision |
+| D3  | Which of several submissions is reviewed?           | The student's last submission before the deadline, whatever its result. Every submission is stored and judged. Until the deadline, the latest one counts provisionally. | FAQ-02        |
+| D4  | How large may a submission be?                      | 65 536 characters of code; 512 KiB of body.                                                                                                                             | team decision |
+| D5  | How does a student get a token?                     | Out of scope for PA#2; a login endpoint comes with accounts in PA#3.                                                                                                    | team decision |
 
 ## 7. Non-goals
 

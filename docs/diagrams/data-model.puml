@@ -24,8 +24,8 @@ entity labs {
   title : text
   statement : text
   deadline : timestamptz
-  time_limit_ms : int <<new>> // default 1000
-  memory_limit_mb : int <<new>> // default 256
+  time_limit_ms : int <<new>> // 1000 to 5000, default 1000
+  memory_limit_mb : int <<new>> // 64 to 512, default 256
   created_at : timestamptz
 }
 entity lab_constraints <<new>> {
@@ -33,7 +33,7 @@ entity lab_constraints <<new>> {
   lab_id : int <<FK>>
   code : text // C1, unique per lab
   text : text
-  deduction : int // >= 0
+  deduction : int // 0 to 10
 }
 entity lab_tests <<new>> {
   * id : int
@@ -73,6 +73,7 @@ entity verdicts <<new>> {
   evidence : jsonb // [{line, text}]
   source : verdict_source // hard_rule, model
   unsure_reason : unsure_reason // set only when unsure
+  explanation : text // the model's words, if any
   created_at : timestamptz
 }
 entity model_calls <<new>> {
