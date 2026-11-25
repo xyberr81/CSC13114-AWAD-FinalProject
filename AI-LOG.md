@@ -110,3 +110,95 @@ Rejected: opening the deliberate-break PR while #2 was still open: its diff woul
 By hand: the ruleset and the merge settings (the repository owner); the screenshots in
 `docs/evidence/`; approving the PRs; the OpenRouter key and its $2 limit (Bình), kept out of the
 chat and the repository.
+
+## 2026-11-24 — PA#3 API: accounts, classes, labs, results, review queue
+
+Tool: Claude Code (Opus 5.5 for the contract, the contract tests and the review; a Sonnet subagent for
+the implementation).
+Asked for: section 3.1 of the PA#3 plan, after finding that no branch had any of it.
+Kept: `docs/contract/pa3-api.md`, then its contract tests run red (101 of 163 failing), then the code,
+one part per commit; a role × ownership matrix with one test per cell; six own eval cases.
+Changed:
+
+- The implementation passed every test and still spread the request body into the insert. Reading the
+  diff showed that a body with `createdAt` reaches the database layer, against "the server ignores
+  fields it does not know". Added a test, then named every column.
+- `submittedAt` was rounded in the review queue and truncated in the submission review, so the two
+  could differ by 1 ms. Added a test and used `floor`.
+- Swagger UI offered no `Idempotency-Key` field, so nobody could submit from `/docs`. Added a test
+  and the header to the OpenAPI document.
+- Own case `s03` looped a fixed 20 times, so its C2 label could be argued either way. Rewrote the
+  case, as the dev set's README asks.
+
+Rejected: a review queue that returns the newest Accepted submission (D3 of PA#2): FAQ-02 counts the
+last submission, whatever its result.
+By hand: Bình approved editing `docs/contract/`, the contract tests and the `eval/` permission rule.
+
+## 2026-11-24: sandbox, attack submissions, CI job
+
+Tool: Claude Code.
+Asked for: `judge()` as designed and approved by Ngọc: compile and run in one-shot containers, one
+attack submission per minimum of brief §5, tests before code, and a CI job of their own.
+Kept: 23 tests first, all red on the stub (`041f3ae`); the hardened `docker run` flags of session 6
+with the FAQ-05 limits; 10 control tests that take one limit away and check that the attack then
+gets through.
+Changed:
+
+- The assistant's network attack was wrong. `connect()` failed with ENETUNREACH under
+  `--network none`, but the program only looked at `SO_ERROR`, which is 0 for a refused connect, and
+  printed "connected". The test was red on a sandbox that did block it. Found by running the same
+  calls with and without a network and printing `errno`; fixed in a commit of its own, before the
+  sandbox code.
+- The plan was to compile within the 256 MB of FAQ-05. Measured: a program with `std::regex` needs
+  about 290 MB and `cc1plus` is killed at 256 MB. Compiling gets 512 MB; the submission still runs in
+  256 MB.
+- Correction: this entry, a code comment and the PR first said that `<bits/stdc++.h>` alone needs
+  290 MB. The program measured also used `<regex>`. Ngọc asked whether 512 MB was really required;
+  measured again, the header alone and all 47 dev-set solutions compile within 256 MB.
+- The plan did not say which process the submission is. Measured: as PID 1 it does not get SIGXCPU
+  (exit 137 one second later instead of 152), so the script starts it as a child of `sh`.
+- A unit test of the forbidden flags matched `--pids-limit` as `--pid`. Narrowed to `--pid=`.
+
+Rejected:
+
+- Pinning `tree-sitter` 0.21 to fit `tree-sitter-cpp`: Hương had already chosen `web-tree-sitter`.
+- An image of our own: the official `gcc` image, pinned by digest, needs nothing added.
+- A limit on submissions per minute: it would answer 429, which the contract does not have.
+
+By hand: approving the design and every commit message; restarting Docker Desktop, which had stopped
+answering on the development machine.
+
+## 2026-11-24: queue, worker, judged exactly once
+
+Tool: Claude Code.
+Asked for: the pg-boss queue, a worker process with the judge and review jobs, and a test that a
+submission is judged exactly once, as designed and approved by Ngọc.
+Kept: 18 queue tests first, red because the modules did not exist (`3834e37`); the judge job is sent
+in the transaction that stores the submission; two worker processes on the server, so that the one
+that may use Docker has no model key and refuses to start with one.
+Changed: 18 of 18 passed on the first run, which proved little. Ten faults were put in one at a time
+(for example `ON CONFLICT` removed, the job sent outside the transaction). Nine were caught at once;
+the tenth survived because the fault was written wrong (it enqueued another submission), and was
+caught once it was corrected.
+Rejected: a required `queue` in `AppDeps`: it would have forced an edit of the contract tests'
+helper, so it is optional there and always passed by `server.ts`.
+Found while running it, not changed: `§2 a body over 512 KiB is 413` fails on Windows only, with
+ECONNRESET, before and after this change; CI (Linux) passes.
+
+By hand: approving the design and every commit message.
+
+## 2026-11-24: public deployment
+
+Tool: Claude Code.
+Asked for: a low-cost Azure server, HTTPS, and the workers without a Docker socket in any container.
+Kept: Compose for Caddy, the API and PostgreSQL; two systemd services for the workers.
+Changed: the first run on the server judged nothing. The docker client may not read the home
+directory of the service user and prints a warning before the container's start mark, which the code
+expected as the first bytes of stderr. All local and CI runs had passed. Found by running the attacks
+through the deployment; a test with a broken client configuration was red first. No submission got a
+wrong result meanwhile: they stayed in `judging` and were retried.
+Rejected: Malaysia, the nearest region, for Central India: the same machine costs about 40% less.
+Verified on the server: 13 attack submissions through HTTPS, the queue and the worker, 4 of them
+also against the harmful answer; worker stopped, submit, started: one set of verdicts; a reboot.
+
+By hand: the Azure account and login, the approval of the cost and of every commit message.

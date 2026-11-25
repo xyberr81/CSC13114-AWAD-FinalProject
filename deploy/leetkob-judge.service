@@ -1,0 +1,25 @@
+# Judges submissions: may use Docker, and has no model key. Run one per Docker host.
+[Unit]
+Description=LeeTKOB judge worker
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+User=leetkob-judge
+SupplementaryGroups=docker
+WorkingDirectory=/opt/leetkob/apps/api
+EnvironmentFile=/etc/leetkob/worker.env
+Environment=WORKER_JOBS=judge
+ExecStart=/usr/local/bin/node dist/worker/main.js
+Restart=always
+RestartSec=5
+TimeoutStopSec=60
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+InaccessiblePaths=/etc/leetkob
+
+[Install]
+WantedBy=multi-user.target

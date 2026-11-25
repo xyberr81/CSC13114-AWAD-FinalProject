@@ -5,7 +5,7 @@
   "description": "LeeTKOB — constraint review for Accepted C++ lab submissions (CSC13114 class project)",
   "type": "module",
   "engines": {
-    "node": ">=22.5"
+    "node": ">=22.12"
   },
   "workspaces": [
     "apps/*"
@@ -14,13 +14,19 @@
     "dev": "npm run dev -w @leetkob/api",
     "build": "npm run build --workspaces --if-present",
     "start": "npm start -w @leetkob/api",
+    "create-admin": "npm run create-admin -w @leetkob/api",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm test --workspaces --if-present",
     "test:contract": "npm run test:contract -w @leetkob/api",
-    "check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run test:contract",
+    "test:queue": "npm run test:queue -w @leetkob/api",
+    "test:sandbox": "npm run test:sandbox -w @leetkob/api",
+    "sandbox:pull": "npm run sandbox:pull -w @leetkob/api",
+    "worker": "npm run worker -w @leetkob/api",
+    "start:worker": "npm run start:worker -w @leetkob/api",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run test:contract && npm run test:queue",
     "db:generate": "npm run db:generate -w @leetkob/api",
     "db:migrate": "npm run db:migrate -w @leetkob/api"
   },
