@@ -283,5 +283,10 @@ Changed:
   was changed in a commit of its own, and now checks the source and the unsure reason as well.
 - Two assistant sessions worked in one folder, and `git add -A` took two test files of the other
   session into a local commit. It was seen before any push; the work moved to a worktree of its own.
+- So two sets of commits were made again after the code existed, and are not counted as test-first:
+  `0323d1c`, `0f53c89` (the worker's model; its test had run red before the code, in the local commit
+  that they replace) and `d52ef0d` … `a4e79bd` (the explanation of a verdict).
+- Before the first run, a probe file showed that `npm run format:check` would reject the report that
+  `eval.mjs` writes. `eval/runs/` is now left out of Prettier: a run is evidence and is not reformatted.
 
 By hand: Hương approved the plan, and the change to the queue tests, before it was made.
