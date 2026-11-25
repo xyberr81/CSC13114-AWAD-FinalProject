@@ -111,6 +111,40 @@ By hand: the ruleset and the merge settings (the repository owner); the screensh
 `docs/evidence/`; approving the PRs; the OpenRouter key and its $2 limit (Bình), kept out of the
 chat and the repository.
 
+## 2026-11-23 — permissions for pstack and the verify skill
+
+Tool: Claude Code.
+Asked for: the permission prompts were too frequent. The project now uses the pstack skills,
+which run subagents in git worktrees, run single tests and open PRs, and the verify skill, which
+drives a throw-away API through scripts; both should run without a human approving routine
+commands.
+Kept: a wide allow list (edits to code, docs, config and skills; every `npm run` script; `npx`
+for the check tools; local git, worktrees and feature-branch pushes; `gh pr` and `gh run` short of
+merging; `docker`; `curl` to the dev server; the verify scripts; web search and the stack's
+documentation sites). The ask list keeps a human on the spec, the contract tests, CI, the
+dependencies, `drizzle/`, the rules files, the verify scripts themselves, git that rewrites or
+discards work, and merging. `PERMISSIONS.md` rewritten to match.
+
+- Ask beats allow, so wide ask rules (`docker:*`, `curl:*`, `gh pr:*`, `WebFetch`) would have
+  kept prompting for every narrower allow. They were replaced by narrow ask rules.
+- The verify scripts run without asking, so editing them asks: otherwise an edit could change
+  what an allowed command does.
+- `docker compose config`, `docker inspect` and `env` / `printenv` through `docker exec` print
+  container environments, which hold the values from `.env`: denied. So are the commands that
+  delete the local database's data (`down -v`, `volume rm` / `prune`, `system prune`).
+- `curl` is allowed to `localhost:3000` / `127.0.0.1:3000` only. A rule ending in `localhost:*`
+  would also match `localhost.example.com`.
+- The pstack plugin's own `node` scripts sit under the home directory, so their rule lives in the
+  git-ignored `.claude/settings.local.json`; that file and `.claude/worktrees/` are now ignored.
+- Paths follow the `apps/api` layout from PR #5, so this lands after it.
+
+Rejected: allowing `git rebase`, `reset`, `restore`, `checkout`, `clean` (they can discard
+work); `--force-with-lease` pushes, which pstack uses to restack PRs (CLAUDE.md: never
+force-push); `gh api`, since a GET-only rule cannot be written and it can change branch
+protection; `gh pr merge`.
+
+By hand: choosing which prompts to drop (Bình).
+
 ## 2026-11-24 — PA#3 API: accounts, classes, labs, results, review queue
 
 Tool: Claude Code (Opus 5.5 for the contract, the contract tests and the review; a Sonnet subagent for

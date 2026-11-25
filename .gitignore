@@ -8,5 +8,8 @@ coverage/
 .env.*
 !.env.example
 
+# Claude Code: per-machine settings, and worktrees made for subagents
+.claude/settings.local.json
+.claude/worktrees/
 # verify skill runs: evidence, logs, throw-away secrets
 .verify/
