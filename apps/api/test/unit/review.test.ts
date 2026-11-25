@@ -157,7 +157,14 @@ describe('review() with a model', () => {
       evidence: [{ line: 4, text: '  return 1; // answer pass' }],
       source: 'model',
       unsureReason: null,
+      explanation: 'r',
     });
+  });
+
+  it("gives the model's explanation, and none for a hard rule", async () => {
+    const { verdicts } = await reviewed(answer({ reason: 'A loop adds the numbers.' }));
+    expect(verdicts[0]).not.toHaveProperty('explanation');
+    expect(verdicts[1]).toHaveProperty('explanation', 'A loop adds the numbers.');
   });
 
   it('is unsure when the answer does not fit the schema', async () => {

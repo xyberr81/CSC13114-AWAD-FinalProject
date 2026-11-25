@@ -17,7 +17,12 @@ const judged = (text: string) => judgeAnswer(text, 'C1', { source: SOURCE, sent:
 
 describe('schema limit: a valid answer', () => {
   it('pass', () => {
-    expect(judged(answer({}))).toEqual({ verdict: 'pass', evidence: [], unsureReason: null });
+    expect(judged(answer({}))).toEqual({
+      verdict: 'pass',
+      evidence: [],
+      unsureReason: null,
+      explanation: 'r',
+    });
   });
 
   it('pass drops evidence, which would only confuse the TA', () => {
@@ -31,6 +36,7 @@ describe('schema limit: a valid answer', () => {
       verdict: 'violation',
       evidence: [{ line: 2, text: '  for (;;) {} // loop' }],
       unsureReason: null,
+      explanation: 'r',
     });
   });
 
@@ -40,6 +46,7 @@ describe('schema limit: a valid answer', () => {
       verdict: 'unsure',
       evidence: [{ line: 2, text: '  for (;;) {} // loop' }],
       unsureReason: 'model_unsure',
+      explanation: 'r',
     });
   });
 
@@ -48,6 +55,25 @@ describe('schema limit: a valid answer', () => {
     expect(judged(answer({ verdict: 'violation', evidence: [line, line] })).evidence).toHaveLength(
       1,
     );
+  });
+});
+
+describe("the model's explanation (FAQ-08, FAQ-09)", () => {
+  it('drops NUL characters, which PostgreSQL cannot store', () => {
+    expect(judged(answer({ reason: 'a\0b' })).explanation).toBe('ab');
+  });
+
+  it.each(['', ' \n', '\0'])('is left out when there is none: %j', (reason) => {
+    expect(judged(answer({ reason }))).not.toHaveProperty('explanation');
+  });
+
+  it('is kept when the evidence does not match, for the TA', () => {
+    const result = judged(answer({ verdict: 'violation', reason: 'It loops.' }));
+    expect(result).toMatchObject({ unsureReason: 'evidence_mismatch', explanation: 'It loops.' });
+  });
+
+  it('is left out when the answer does not fit the schema', () => {
+    expect(judged(answer({ verdict: 'PASS' }))).not.toHaveProperty('explanation');
   });
 });
 
