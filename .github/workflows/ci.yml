@@ -54,6 +54,8 @@ jobs:
         run: npm test
       - name: contract tests
         run: npm run test:contract
+      - name: queue tests
+        run: npm run test:queue
       - name: build
         run: npm run build
 
