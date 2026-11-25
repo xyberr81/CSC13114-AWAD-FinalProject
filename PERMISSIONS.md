@@ -46,7 +46,7 @@ dependencies, the database history and `main` under a human.
 ## Never — denied in the settings
 
 - Read or edit `.env`, `.env.local`, `.env.production`, anything under `~/.ssh`.
-- Edit eval data or labels (`eval/`).
+- Edit the published dev set (`eval/leetkob-eval/`) or a committed run (`eval/runs/`).
 - `git push --force` / `-f` / `--force-with-lease`, `git push` to `main`, delete a remote branch or
   a tag, `git branch -D`. `main` is also protected on GitHub.
 - `docker compose config`, `docker inspect`, and `env` / `printenv` through `docker exec`: they

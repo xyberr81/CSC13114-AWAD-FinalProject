@@ -44,18 +44,18 @@ ever sent to the model.
 
 ## Stack
 
-| Part            | Choice                                         |
-| --------------- | ---------------------------------------------- |
-| Language        | TypeScript on Node.js 22                       |
-| API             | Fastify, errors as problem details (RFC 9457)  |
-| Database        | PostgreSQL, schema and migrations with Drizzle |
-| Queue           | pg-boss on the same PostgreSQL (planned, PA#3) |
-| Sandbox         | Docker containers with `gcc` (planned, PA#3)   |
-| Hard rules      | tree-sitter-cpp (planned, PA#3)                |
-| Tests           | Vitest — unit tests and HTTP contract tests    |
-| Lint and format | ESLint (type-aware), Prettier, `tsc --noEmit`  |
-| CI              | GitHub Actions                                 |
-| Model           | via OpenRouter; model chosen in PA#3           |
+| Part            | Choice                                             |
+| --------------- | -------------------------------------------------- |
+| Language        | TypeScript on Node.js 22                           |
+| API             | Fastify, errors as problem details (RFC 9457)      |
+| Database        | PostgreSQL, schema and migrations with Drizzle     |
+| Queue           | pg-boss on the same PostgreSQL                     |
+| Sandbox         | one-shot Docker containers, `gcc` pinned by digest |
+| Hard rules      | tree-sitter-cpp (planned, PA#3)                    |
+| Tests           | Vitest — unit tests and HTTP contract tests        |
+| Lint and format | ESLint (type-aware), Prettier, `tsc --noEmit`      |
+| CI              | GitHub Actions                                     |
+| Model           | via OpenRouter; model chosen in PA#3               |
 
 ## API
 
@@ -78,30 +78,35 @@ contract. A contract is changed only by its own pull request, never together wit
 │       └── ci.yml           # every check, on each pull request, on main and on pa* tags
 ├── docs/
 │   └── contract/            # frozen API contracts — the spec the code and the tests follow
-├── drizzle/                 # generated SQL migrations (do not edit by hand)
-├── src/
-│   ├── app.ts               # builds the Fastify app: JSON parsing, problem+json errors, routes
-│   ├── server.ts            # entry point: reads config, connects to PostgreSQL, listens
-│   ├── config.ts            # environment variables → typed config
-│   ├── problem.ts           # the error model: problem types, ProblemError
-│   ├── auth.ts              # bearer tokens (HS256 JWT), id parsing
-│   ├── idempotency.ts       # Idempotency-Key rules, request fingerprint
-│   ├── db/
-│   │   ├── schema.ts        # users, classes, class_members, labs, submissions, idempotency_keys
-│   │   └── client.ts        # PostgreSQL pool + Drizzle client
-│   └── routes/
-│       ├── health.ts        # GET /v1/health
-│       └── submissions.ts   # POST /v1/labs/{labId}/submissions
-├── test/
-│   ├── unit/                # fast tests: no database, no network, no real model calls
-│   └── contract/            # HTTP-only tests written from docs/contract/, against PostgreSQL
+├── apps/
+│   ├── api/                 # the backend (npm workspace @leetkob/api)
+│   │   ├── drizzle/         # generated SQL migrations (do not edit by hand)
+│   │   ├── src/
+│   │   │   ├── app.ts       # builds the Fastify app: JSON parsing, problem+json errors, routes
+│   │   │   ├── server.ts    # entry point: reads config, connects to PostgreSQL, listens
+│   │   │   ├── config.ts    # environment variables → typed config
+│   │   │   ├── problem.ts   # the error model: problem types, ProblemError
+│   │   │   ├── auth.ts      # bearer tokens (HS256 JWT), id parsing
+│   │   │   ├── idempotency.ts # Idempotency-Key rules, request fingerprint
+│   │   │   ├── db/          # schema.ts (every table), client.ts (pool + Drizzle)
+│   │   │   ├── queue/       # pg-boss: jobs are sent in the transaction that stores the data
+│   │   │   ├── sandbox/     # judge(): compiles and runs code in hardened containers
+│   │   │   ├── worker/      # `npm run worker`: the judge and review jobs
+│   │   │   └── routes/      # one Fastify plugin per part, registered in app.ts
+│   │   ├── test/
+│   │   │   ├── unit/        # fast tests: no database, no network, no real model calls
+│   │   │   ├── contract/    # HTTP-only tests written from docs/contract/, against PostgreSQL
+│   │   │   ├── queue/       # the queue and the worker, against PostgreSQL; no Docker, no model
+│   │   │   └── sandbox/     # attack submissions and their controls, against Docker
+│   │   ├── drizzle.config.ts # migration tool config
+│   │   ├── tsconfig.json    # type check (src, test, configs); tsconfig.build.json: src → dist
+│   │   └── vitest.config.ts # test projects: unit, contract, queue, sandbox
+│   └── web/                 # the frontend (PA#4 onwards; not started)
+├── deploy/                  # the public deployment: Compose, systemd units, scripts
 ├── .env.example             # every variable the app reads, without values
 ├── docker-compose.yml       # local PostgreSQL
-├── drizzle.config.ts        # migration tool config
-├── eslint.config.js         # lint rules
-├── tsconfig.json            # type check (src, test, configs)
-├── tsconfig.build.json      # build: src → dist
-├── vitest.config.ts         # test projects: unit, contract
+├── eslint.config.js         # lint rules, for every workspace
+├── package.json             # npm workspaces; the root scripts run each workspace's checks
 ├── CLAUDE.md                # rules for the coding assistant: stack, commands, conventions, never
 ├── PERMISSIONS.md           # what the assistant may do, must ask for, may never do
 ├── AI-LOG.md                # how AI was used, per task
@@ -122,6 +127,13 @@ npm run db:migrate
 npm run dev                 # http://127.0.0.1:3000/v1/health
 ```
 
+The worker is a process of its own and needs Docker:
+
+```bash
+npm run sandbox:pull        # once: the sandbox image
+npm run worker              # judges and reviews what the API puts on the queue
+```
+
 In `.env`, choose any `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB`, set
 `DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/<db>` to match, and generate
 `JWT_SECRET` with `openssl rand -hex 32`. `.env` is git-ignored; never commit it.
@@ -137,12 +149,56 @@ CI runs exactly these commands; they must all pass before a pull request can be 
 | Type check     | `npm run typecheck`     |
 | Unit tests     | `npm test`              |
 | Contract tests | `npm run test:contract` |
+| Queue tests    | `npm run test:queue`    |
 | All of them    | `npm run check`         |
+| Sandbox tests  | `npm run test:sandbox`  |
 
-Contract tests need the PostgreSQL from `docker compose` (they read `DATABASE_URL` and
+Lint, format check, type check and unit tests need nothing but the installed dependencies: no
+database, no Docker, no network. The sandbox tests need Docker and are not part of `npm run check`;
+CI runs them as the job `sandbox`, on every pull request and on `pa*` tags.
+
+Contract and queue tests need the PostgreSQL from `docker compose` (they read `DATABASE_URL` and
 `JWT_SECRET` from `.env`), migrate it, and start the app in-process. Each test creates its own users,
 classes and labs, so they can run against a database that already has data. To run them against a
 deployed server, also set `CONTRACT_BASE_URL`, e.g. `CONTRACT_BASE_URL=https://example.org`.
+
+## Queue and sandbox
+
+The submit route stores the submission and its `judge` job in one transaction and judges nothing.
+`npm run worker` runs two jobs:
+
+- `judge` compiles and runs the code against the lab's tests. If the submission is Accepted, the
+  `review` job is sent in the transaction that stores the results.
+- `review` decides the constraints that have no verdict yet. `verdicts` is unique on (submission,
+  constraint) and inserts use `ON CONFLICT DO NOTHING`.
+
+Delivery is at least once and both jobs are safe to repeat, so a submission ends with one set of
+verdicts, also when a worker dies while judging. A sandbox that fails is retried and never becomes
+the student's result. `WORKER_JOBS=judge` or `review` runs one job per process; the process that may
+use Docker refuses to start with `LLM_API_KEY`. Run one judge worker per Docker host: when it starts,
+it removes the containers the last one left.
+
+Student code is compiled and run only in one-shot containers (`apps/api/src/sandbox/docker.ts`):
+no network, no mounts, no environment of ours, uid 65534, read-only root, 16 processes, all
+capabilities dropped. Limits are those of FAQ-05: 1 s CPU per test, wall clock 3× that, which kills
+the container, 256 MB with swap included, 1 MB of output. Compiling gets 10 s and 512 MB: a program
+that uses `<regex>` does not compile within 256 MB.
+
+`apps/api/test/sandbox/attacks.test.ts` has an attack submission for each of the nine minimums of
+the brief, and `controls.test.ts` takes one limit away at a time and checks that the attack then
+succeeds.
+
+## Deployment
+
+<https://leetkob-awad.centralindia.cloudapp.azure.com>: one Ubuntu server. Caddy (HTTPS), the API and
+PostgreSQL run in Docker Compose; the two workers run on the host under systemd, so no container
+mounts the Docker socket. The model key is only in `/etc/leetkob/model.env`, which systemd gives to
+the review worker.
+
+```bash
+sudo deploy/setup.sh <dns-name>           # once, on a fresh Ubuntu 24.04
+sudo /opt/leetkob/deploy/deploy.sh main   # every version: a branch or a tag
+```
 
 ## Model and cost
 

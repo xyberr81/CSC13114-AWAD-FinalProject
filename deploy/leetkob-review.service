@@ -1,0 +1,25 @@
+# Reviews Accepted submissions: holds the model key, and may not use Docker.
+[Unit]
+Description=LeeTKOB review worker
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+User=leetkob-review
+WorkingDirectory=/opt/leetkob/apps/api
+EnvironmentFile=/etc/leetkob/worker.env
+EnvironmentFile=/etc/leetkob/model.env
+Environment=WORKER_JOBS=review
+ExecStart=/usr/local/bin/node dist/worker/main.js
+Restart=always
+RestartSec=5
+TimeoutStopSec=60
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+InaccessiblePaths=/etc/leetkob
+InaccessiblePaths=-/run/docker.sock
+
+[Install]
+WantedBy=multi-user.target

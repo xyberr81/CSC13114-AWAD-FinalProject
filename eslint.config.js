@@ -5,7 +5,16 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/', 'coverage/', 'drizzle/', 'node_modules/'] },
+  {
+    ignores: [
+      '**/dist/',
+      '**/coverage/',
+      '**/drizzle/',
+      '**/node_modules/',
+      // the published dev set: kept byte for byte, so not ours to lint
+      'eval/leetkob-eval/',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {

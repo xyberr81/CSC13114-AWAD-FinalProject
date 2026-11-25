@@ -3,3 +3,6 @@ coverage/
 drizzle/
 node_modules/
 package-lock.json
+
+# the published dev set: kept byte for byte, so never reformatted
+eval/leetkob-eval/
