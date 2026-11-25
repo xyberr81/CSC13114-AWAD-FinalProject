@@ -11,8 +11,8 @@ Lines marked _(story)_ come from something that actually went wrong; the AI-LOG 
 - TypeScript on Node 22 (ESM), Fastify 5, PostgreSQL 17 with Drizzle, Vitest, ESLint + Prettier.
 - TypeScript is pinned to `~6.0`: typescript-eslint does not support 7 yet. _(story: AI-LOG
   2026-11-10 "scaffold")_
-- pg-boss queue on the same PostgreSQL, Docker sandbox with `gcc`. Planned (PA#3): tree-sitter-cpp
-  hard rules.
+- pg-boss queue on the same PostgreSQL, Docker sandbox with `gcc`. Hard rules: web-tree-sitter (WASM)
+  with the tree-sitter-cpp grammar. Model: OpenRouter, only through `review()`.
 
 ## Commands
 
