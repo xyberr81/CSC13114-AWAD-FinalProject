@@ -12,7 +12,7 @@ named `PA3 §…` check an implementation against it. FAQ numbers refer to the p
 §1 (ids, timestamps, unknown fields, tokens) and §2 (problem details) of post-lab-submissions.md
 apply to every endpoint here. Every endpoint needs a token, except `POST /v1/auth/login`.
 
-Text fields may not contain the character U+0000. Nothing is coerced: `"3"` is not a number.
+Text fields may not contain the character U+0000 or an unpaired surrogate (`\ud800`). Nothing is coerced: `"3"` is not a number.
 
 **Checks, in this order.** The first check that fails decides the response:
 
