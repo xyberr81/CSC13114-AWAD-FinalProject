@@ -63,5 +63,16 @@
       "Bash(sudo:*)",
       "Bash(rm -rf:*)"
     ]
+  },
+  "extraKnownMarketplaces": {
+    "pstack-claude": {
+      "source": {
+        "source": "github",
+        "repo": "michael-denyer/pstack-claude"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "pstack@pstack-claude": true
   }
 }
