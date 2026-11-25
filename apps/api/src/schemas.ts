@@ -1,7 +1,10 @@
 // Pieces the route schemas share. A response schema lists every field a client may see:
 // Fastify drops the rest, which is what keeps verdicts and test data out of student responses.
 
-/** A string of `min`–`max` characters without U+0000, and not only whitespace unless `blank`. */
+/**
+ * A string of `min`–`max` characters without U+0000 or an unpaired surrogate, and not only
+ * whitespace unless `blank`.
+ */
 export function text(min: number, max: number, { blank = false } = {}) {
   return {
     type: 'string',

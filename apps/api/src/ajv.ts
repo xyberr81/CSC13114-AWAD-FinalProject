@@ -31,10 +31,14 @@ function report<T>(
   return errors.length === 0;
 }
 
-/** `'any'`: no U+0000. `'nonblank'`: also a character that is not whitespace. */
+/**
+ * `'any'`: no U+0000 and no unpaired surrogate, which PostgreSQL cannot store as sent.
+ * `'nonblank'`: also a character that is not whitespace.
+ */
 const text: Check<string> = (mode, data, _parent, cxt) => {
   const errors: [string, string][] = [];
   if (data.includes('\u0000')) errors.push(['', 'must not contain the character U+0000']);
+  if (/\p{Surrogate}/u.test(data)) errors.push(['', 'must not contain an unpaired surrogate']);
   if (mode === 'nonblank' && !/\S/.test(data)) {
     errors.push(['', 'must contain a character that is not whitespace']);
   }
