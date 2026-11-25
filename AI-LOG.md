@@ -6,9 +6,10 @@ Team: 23120024 — Nguyễn Thanh Bình · 23120046 — Hồ Thùy Hương · 23
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Claude Code (VS Code), Claude Opus 5.5 | repository scaffold, CI, rules file, contract draft, contract and unit tests, implementation, PA#2 evidence and PRs |
 
-Model inside the product: provider OpenRouter (key with a $2 credit limit, README §Model and
-cost); the model itself is chosen in PA#3. Data that will leave our system then: lab statement,
-constraints, and submission code with comments, names and student IDs stripped (brief §3).
+Model inside the product: `anthropic/claude-haiku-5.5` through OpenRouter (key with a $2 credit limit,
+README §Model and cost). Data that leaves our system: the lab statement, one constraint, and the
+submission code without comments, with string words masked and student IDs zeroed (brief §3).
+Cost of one lab of 80: not measured yet (README §Model and cost).
 
 ---
 
@@ -236,3 +237,51 @@ Verified on the server: 13 attack submissions through HTTPS, the queue and the w
 also against the harmful answer; worker stopped, submit, started: one set of verdicts; a reboot.
 
 By hand: the Azure account and login, the approval of the cost and of every commit message.
+
+## 2026-11-24: hard rules
+
+Tool: Claude Code.
+Asked for: decide ban-list constraints without the model, with tests first, the dev set's traps and
+disguises included.
+Kept: comment stripping with a C++ tokenizer, a small preprocessor for the student's macros, a syntax
+tree, and name resolution that tells the student's own `sort` from the library's. A constraint that
+is not a plain ban list is left to the model.
+Changed:
+
+- A macro used inside another macro cited one line too many. The code was fixed, not the test.
+- A `friend` function was flagged as the library's, which would be a wrongful deduction, and
+  `&std::string::rbegin` was missed. A test for each was red first.
+
+Rejected: the native `tree-sitter` package: the peer range of `tree-sitter-cpp` (`^0.21.1`) does not
+cover 0.25. The WASM build fits and needs no compiler.
+By hand: Hương decided to install tree-sitter, and copied and committed the dev set herself: the
+assistant may not edit `eval/`.
+
+## 2026-11-24: model call, its limits, the checker
+
+Tool: Claude Code.
+Asked for: the OpenRouter client, the schema and time limits around it, and the checker command with
+its Docker image.
+Kept: comments and identity are removed before the prompt is built; an answer that does not fit the
+schema, cites a line that is not in the code, or comes too late becomes `unsure`; one call-log entry
+per call. Every test uses a fake model or a fake `fetch`.
+Changed: the first system prompt gave `mergeSort` as its example of a misleading function name.
+Merge sort is in the dev set, so the example was replaced by a neutral sentence.
+Rejected: counting an HTTP 200 as a success: OpenRouter can put an error inside one.
+Not done yet: no real model has been called so far.
+
+## 2026-11-26: the model in the worker
+
+Tool: Claude Code.
+Asked for: merge `foundation`, connect the model to the review worker, write the documentation.
+Kept: a worker that reviews stops at once without the model settings, instead of being `unsure` about
+every submission.
+Changed:
+
+- Four queue tests were red after the merge. They expected two `unsure` verdicts because they were
+  written when `review()` was a stub; a hard rule now decides the first constraint. The expectation
+  was changed in a commit of its own, and now checks the source and the unsure reason as well.
+- Two assistant sessions worked in one folder, and `git add -A` took two test files of the other
+  session into a local commit. It was seen before any push; the work moved to a worktree of its own.
+
+By hand: Hương approved the plan, and the change to the queue tests, before it was made.
