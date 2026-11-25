@@ -317,6 +317,20 @@ describe('§4.1 field rules — 400 validation', () => {
     expect(res.status).toBe(201);
   });
 
+  it.each([
+    ['U+0000', 'int a;\u0000'],
+    ['an unpaired high surrogate', 'int a; // \ud800'],
+    ['an unpaired low surrogate', 'int a; // \udc00'],
+  ])('§4.1 code with %s is a validation problem at /code', async (_name, code) => {
+    expect(await pointers({ language: 'cpp', code })).toEqual(['/code']);
+  });
+
+  it('§4.1 code with a surrogate pair is accepted', async () => {
+    const { labId, student } = await enrolledStudent(env);
+    const body = { language: 'cpp', code: 'int main() {} // 😀' };
+    expect((await submit({ labId, token: student.token, body })).status).toBe(201);
+  });
+
   it('§4.1 code is never coerced: a number is a validation problem at /code', async () => {
     expect(await pointers({ language: 'cpp', code: 12345 })).toEqual(['/code']);
   });

@@ -233,6 +233,20 @@ describe('PA3 §3 classes', () => {
     ]);
   });
 
+  it('§1 an unpaired surrogate is a validation problem', async () => {
+    const admin = await makeUser(env, 'admin');
+    const body = { code: 'a\ud800', name: 'b\udc00' };
+    const problem = await expectProblem(
+      await call('POST', '/v1/classes', admin, body),
+      'validation',
+      400,
+    );
+    expect((problem.errors as { pointer: string }[]).map((e) => e.pointer).sort()).toEqual([
+      '/code',
+      '/name',
+    ]);
+  });
+
   it('§3.2 members see their own classes, an admin sees all', async () => {
     const w = await world();
     const ids = async (who: Who) =>
@@ -386,6 +400,21 @@ describe('PA3 §4 labs', () => {
       '/constraints/0/deduction',
     ],
     ['no tests', { tests: [] }, '/tests'],
+    [
+      'unpaired surrogates in constraint codes',
+      {
+        constraints: [
+          { code: '\ud800', text: 'x', deduction: 1 },
+          { code: '\ud801', text: 'x', deduction: 1 },
+        ],
+      },
+      '/constraints/0/code',
+    ],
+    [
+      'an unpaired surrogate in a test',
+      { tests: [{ input: 'a\ud800', expectedOutput: '' }] },
+      '/tests/0/input',
+    ],
     ['U+0000 in a test', { tests: [{ input: 'a\u0000', expectedOutput: '' }] }, '/tests/0/input'],
   ])('§4.1 rejects %s and stores nothing', async (_name, over, pointer) => {
     const w = await world();
