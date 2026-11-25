@@ -56,6 +56,12 @@ dependencies, the database history and `main` under a human.
 - `gh api` (it can change repository settings such as branch protection).
 - `sudo`, `rm -rf`.
 
+## Plugins
+
+- [pstack](https://github.com/michael-denyer/pstack-claude) (`pstack@pstack-claude`) is enabled for
+  the project; Claude Code offers to install it on first trust of the folder. Its skills run
+  under the same allow / ask / deny rules above.
+
 ## Secrets
 
 - `.env` is git-ignored; [`.env.example`](.env.example) lists every variable, without values.
