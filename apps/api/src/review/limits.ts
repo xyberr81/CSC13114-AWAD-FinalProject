@@ -120,9 +120,10 @@ export const ANSWER_SCHEMA = {
 interface Answer {
   verdict: VerdictValue;
   evidence: Evidence[];
+  reason: string;
 }
 
-export type JudgedAnswer = { evidence: Evidence[] } & (
+export type JudgedAnswer = { evidence: Evidence[]; explanation?: string } & (
   | { verdict: 'pass' | 'violation'; unsureReason: null }
   | { verdict: 'unsure'; unsureReason: UnsureReason }
 );
@@ -135,7 +136,12 @@ export function judgeAnswer(
 ): JudgedAnswer {
   const answer = parseAnswer(text, constraint);
   if (!answer) return { verdict: 'unsure', evidence: [], unsureReason: 'bad_schema' };
-  if (answer.verdict === 'pass') return { verdict: 'pass', evidence: [], unsureReason: null };
+  // PostgreSQL cannot store a NUL character.
+  const words = answer.reason.replaceAll('\0', '').trim();
+  const explained = words ? { explanation: words } : {};
+  if (answer.verdict === 'pass') {
+    return { verdict: 'pass', evidence: [], unsureReason: null, ...explained };
+  }
 
   const original = source.split(/\r?\n/);
   const shown = sent.split(/\r?\n/);
@@ -149,13 +155,13 @@ export function judgeAnswer(
   }));
 
   if (answer.verdict === 'unsure') {
-    return { verdict: 'unsure', evidence, unsureReason: 'model_unsure' };
+    return { verdict: 'unsure', evidence, unsureReason: 'model_unsure', ...explained };
   }
   // Without proof there is no violation, and an invented line makes the rest doubtful too.
   if (evidence.length === 0 || matching.length < answer.evidence.length) {
-    return { verdict: 'unsure', evidence, unsureReason: 'evidence_mismatch' };
+    return { verdict: 'unsure', evidence, unsureReason: 'evidence_mismatch', ...explained };
   }
-  return { verdict: 'violation', evidence, unsureReason: null };
+  return { verdict: 'violation', evidence, unsureReason: null, ...explained };
 }
 
 const squeeze = (text: string) => text.replace(/\s+/g, '');
@@ -172,7 +178,7 @@ function parseAnswer(text: string, constraint: string): Answer | null {
   if (typeof reason !== 'string' || value.constraint !== constraint) return null;
   if (!VERDICT_VALUES.includes(verdict as VerdictValue) || !Array.isArray(evidence)) return null;
   if (!evidence.every(isEvidence)) return null;
-  return { verdict: verdict as VerdictValue, evidence };
+  return { verdict: verdict as VerdictValue, evidence, reason };
 }
 
 function isEvidence(value: unknown): value is Evidence {

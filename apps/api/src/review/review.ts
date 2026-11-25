@@ -27,6 +27,8 @@ interface VerdictBase {
   constraint: string;
   evidence: Evidence[];
   source: VerdictSource;
+  /** The model's own words, when it gave any (FAQ-08, FAQ-09). */
+  explanation?: string;
 }
 
 /** An unsure verdict always has a reason (FAQ-09); the others never do. */
