@@ -76,19 +76,27 @@ export const classMembers = pgTable(
   (t) => [primaryKey({ columns: [t.classId, t.userId] })],
 );
 
-export const labs = pgTable('labs', {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  classId: integer()
-    .notNull()
-    .references(() => classes.id, { onDelete: 'restrict' }),
-  title: text().notNull(),
-  statement: text().notNull(),
-  deadline: timestamp({ withTimezone: true }).notNull(),
-  // FAQ-05 defaults: 1 s CPU per test, 256 MB including swap.
-  timeLimitMs: integer().notNull().default(1000),
-  memoryLimitMb: integer().notNull().default(256),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+export const labs = pgTable(
+  'labs',
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    classId: integer()
+      .notNull()
+      .references(() => classes.id, { onDelete: 'restrict' }),
+    title: text().notNull(),
+    statement: text().notNull(),
+    deadline: timestamp({ withTimezone: true }).notNull(),
+    // FAQ-05 defaults: 1 s CPU per test, 256 MB including swap.
+    timeLimitMs: integer().notNull().default(1000),
+    memoryLimitMb: integer().notNull().default(256),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  // FAQ-05 ranges. Docker takes a memory limit of 0 as no limit.
+  (t) => [
+    check('time_limit_range', sql`${t.timeLimitMs} BETWEEN 1000 AND 5000`),
+    check('memory_limit_range', sql`${t.memoryLimitMb} BETWEEN 64 AND 512`),
+  ],
+);
 
 export const labConstraints = pgTable(
   'lab_constraints',
@@ -101,7 +109,10 @@ export const labConstraints = pgTable(
     text: text().notNull(),
     deduction: integer().notNull(),
   },
-  (t) => [unique().on(t.labId, t.code), check('deduction_non_negative', sql`${t.deduction} >= 0`)],
+  (t) => [
+    unique().on(t.labId, t.code),
+    check('deduction_range', sql`${t.deduction} BETWEEN 0 AND 10`),
+  ],
 );
 
 export const labTests = pgTable(
@@ -159,7 +170,7 @@ export const submissionTestResults = pgTable(
       .references(() => submissions.id, { onDelete: 'cascade' }),
     testId: integer()
       .notNull()
-      .references(() => labTests.id, { onDelete: 'cascade' }),
+      .references(() => labTests.id, { onDelete: 'restrict' }),
     status: testStatus().notNull(),
     timeMs: integer(),
     memoryKb: integer(),
@@ -187,6 +198,8 @@ export const verdicts = pgTable(
     evidence: jsonb().$type<EvidenceLine[]>().notNull().default([]),
     source: verdictSource().notNull(),
     unsureReason: unsureReason(),
+    // The model's own words, if it gave any (FAQ-08, FAQ-09).
+    explanation: text(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
