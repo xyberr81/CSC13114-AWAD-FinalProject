@@ -7,3 +7,6 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# verify skill runs: evidence, logs, throw-away secrets
+.verify/
