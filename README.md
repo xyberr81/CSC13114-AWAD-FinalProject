@@ -51,11 +51,11 @@ ever sent to the model.
 | Database        | PostgreSQL, schema and migrations with Drizzle     |
 | Queue           | pg-boss on the same PostgreSQL                     |
 | Sandbox         | one-shot Docker containers, `gcc` pinned by digest |
-| Hard rules      | tree-sitter-cpp (planned, PA#3)                    |
+| Hard rules      | web-tree-sitter with the tree-sitter-cpp grammar   |
 | Tests           | Vitest — unit tests and HTTP contract tests        |
 | Lint and format | ESLint (type-aware), Prettier, `tsc --noEmit`      |
 | CI              | GitHub Actions                                     |
-| Model           | via OpenRouter; model chosen in PA#3               |
+| Model           | `anthropic/claude-haiku-5.5` via OpenRouter        |
 
 ## API
 
@@ -92,6 +92,8 @@ contract. A contract is changed only by its own pull request, never together wit
 │   │   │   ├── queue/       # pg-boss: jobs are sent in the transaction that stores the data
 │   │   │   ├── sandbox/     # judge(): compiles and runs code in hardened containers
 │   │   │   ├── worker/      # `npm run worker`: the judge and review jobs
+│   │   │   ├── review/      # review(): hard rules first, then the model and its limits
+│   │   │   ├── checker/     # `npm run checker`: review() over a dataset folder
 │   │   │   └── routes/      # one Fastify plugin per part, registered in app.ts
 │   │   ├── test/
 │   │   │   ├── unit/        # fast tests: no database, no network, no real model calls
@@ -103,6 +105,8 @@ contract. A contract is changed only by its own pull request, never together wit
 │   │   └── vitest.config.ts # test projects: unit, contract, queue, sandbox
 │   └── web/                 # the frontend (PA#4 onwards; not started)
 ├── deploy/                  # the public deployment: Compose, systemd units, scripts
+├── eval/                    # the published dev set (never edited) and our own cases
+├── Dockerfile.checker       # the checker image
 ├── .env.example             # every variable the app reads, without values
 ├── docker-compose.yml       # local PostgreSQL
 ├── eslint.config.js         # lint rules, for every workspace
@@ -133,6 +137,9 @@ The worker is a process of its own and needs Docker:
 npm run sandbox:pull        # once: the sandbox image
 npm run worker              # judges and reviews what the API puts on the queue
 ```
+
+A worker that reviews does not start without `LLM_PROVIDER`, `LLM_MODEL` and `LLM_API_KEY` (§Model and
+cost). Without a key, start it with `MODEL_OFF=1`: hard rules only.
 
 In `.env`, choose any `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB`, set
 `DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/<db>` to match, and generate
@@ -188,6 +195,39 @@ that uses `<regex>` does not compile within 256 MB.
 the brief, and `controls.test.ts` takes one limit away at a time and checks that the attack then
 succeeds.
 
+## Checker
+
+`npm run checker` runs the product's own `review()` over a dataset folder in the layout of
+`eval/leetkob-eval/` and writes one prediction per (solution, constraint) pair. It reads the problems
+and the solutions, never `labels.jsonl` or the tests.
+
+```bash
+npm run checker -- eval/leetkob-eval --out predictions.jsonl --calls calls.jsonl
+node eval/leetkob-eval/eval.mjs --data eval/leetkob-eval --predictions predictions.jsonl
+```
+
+| Option or variable  | Meaning                                                                          |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `--out <file>`      | the prediction file; without it, standard output (then use `npm run --silent`)   |
+| `--calls <file>`    | the call log, with the provider's request ids; an existing file is refused       |
+| `--limit <n>`       | only the first `n` solutions                                                     |
+| `--concurrency <n>` | pairs reviewed at once, 4 by default                                             |
+| `MODEL_OFF=1`       | hard rules only: every semantic constraint is `unsure`, and no network is needed |
+
+Otherwise it needs `LLM_PROVIDER=openrouter`, `LLM_MODEL` and `LLM_API_KEY` from `.env`. The summary
+goes to standard error. Exit code: 0 done, 1 some pair failed, 2 wrong usage or missing settings.
+
+The same command as an image, without network and without a key:
+
+```bash
+docker build -t leetkob-checker -f Dockerfile.checker .
+docker run --rm --network none -e MODEL_OFF=1 -v "$PWD/eval/leetkob-eval:/data:ro" \
+  leetkob-checker /data > predictions.jsonl
+```
+
+With the model off, the hard rules decide 55 of the 102 pairs of the dev set with 0 wrongful
+deductions; the other 47 are `unsure`, so `eval.mjs` exits with 1 (recall 40.5%, unsure 46.1%).
+
 ## Deployment
 
 <https://leetkob-awad.centralindia.cloudapp.azure.com>: one Ubuntu server. Caddy (HTTPS), the API and
@@ -202,17 +242,20 @@ sudo /opt/leetkob/deploy/deploy.sh main   # every version: a branch or a tag
 
 ## Model and cost
 
-- Provider: [OpenRouter](https://openrouter.ai). Model: chosen in PA#3, when the LLM feature
-  arrives. Unit tests never call a real model.
+- Provider: [OpenRouter](https://openrouter.ai). Model: `anthropic/claude-haiku-5.5`. `LLM_MODEL` is
+  this name, not a key; the only key is `LLM_API_KEY`. Unit tests never call a real model.
 - Spending cap: the project's API key ("AWAD Final Project") has a **credit limit of $2 in
   total**, set on the key in OpenRouter when it was created on 2026-11-11. The limit does not
   reset, and the key expires on 2027-05-10
   ([screenshot](docs/evidence/openrouter-key-cap.png): $0.000 used, never used). Once the $2 is
   spent, OpenRouter refuses requests made with that key. The key lives only in each
   member's `.env` (`LLM_API_KEY`), never in the repository, CI or the sandbox.
-- Cost of one lab (about 80 submissions): measured in PA#3.
-- Data sent to the model: the lab statement, the constraints, and the submission code with comments,
-  names and student IDs stripped. Nothing else.
+- Cost of one lab (80 submissions): not measured yet. It will be the cost of the dev-set run in its
+  call log ÷ its model calls × semantic constraints per submission × 80. A ban list costs nothing:
+  the model is not called for it.
+- Data sent to the model: the lab statement, one constraint, and the submission code without
+  comments, with the words of string literals masked and eight-digit student IDs in identifiers
+  zeroed. Nothing else.
 
 ## Working on this repository
 
