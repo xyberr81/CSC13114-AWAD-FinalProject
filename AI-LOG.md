@@ -6,7 +6,7 @@ Team: 23120024 — Nguyễn Thanh Bình · 23120046 — Hồ Thùy Hương · 23
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Claude Code (VS Code), Claude Opus 5.5 | repository scaffold, CI, rules file, contract draft, contract and unit tests, implementation, PA#2 evidence and PRs |
 
-Model inside the product: `anthropic/claude-haiku-5.5` through OpenRouter (key with a $2 credit limit,
+Model inside the product: `deepseek/deepseek-v4-flash-0731` through OpenRouter (key with a $2 credit limit,
 README §Model and cost). Data that leaves our system: the lab statement, one constraint, and the
 submission code without comments, with string words masked and student IDs zeroed (brief §3).
 Cost of one lab of 80: not measured yet (README §Model and cost).
@@ -290,3 +290,24 @@ Changed:
   `eval.mjs` writes. `eval/runs/` is now left out of Prettier: a run is evidence and is not reformatted.
 
 By hand: Hương approved the plan, and the change to the queue tests, before it was made.
+
+## 2026-11-26: choosing the model
+
+Tool: Claude Code.
+Asked for: the DeepSeek models on OpenRouter, with their prices, then the documentation for the
+one chosen.
+Kept: `deepseek/deepseek-v4-flash-0731`, a version with a date. Of the DeepSeek versions with a date
+that OpenRouter listed on 2026-11-26, it was the cheapest ($0.06 in, $0.18 out per million tokens),
+and it supports structured outputs.
+Rejected:
+
+- `anthropic/claude-haiku-5.5`, proposed first ($0.10 in, $0.50 out).
+- Names that start with `~` (`~deepseek/deepseek-flash-latest`): they move to each new version, so a
+  dev-set run could not be repeated.
+- `:batch` versions: not checked to answer each call at once, which the review job needs.
+- The `pro` versions: $4.44 per million output tokens for `deepseek-v4-pro-0813`.
+
+Not checked yet: this model can reason before it answers. Whether that fits in the 4000 output tokens
+of a call, and what it costs, is what the trial of three calls before the dev-set run will show.
+
+By hand: Hương chose the model.
