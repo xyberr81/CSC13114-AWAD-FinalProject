@@ -1,0 +1,38 @@
+LeeTKOB eval · data /home/hg/source/awad/CSC13114-AWAD-FinalProject/eval/leetkob-eval · predictions /tmp/tmp.rplCevTTGD/full/predictions.jsonl
+47 solutions, 102 (solution, constraint) pairs: 65 labelled pass, 37 labelled violation
+
+Metrics
+  wrongful deductions    0                  ok    (target = 0)
+  recall                 78.4% (29/37)      FAIL  (target >= 90.0%)
+  unsure rate            22.5% (23/102)     FAIL  (target <= 20.0%)
+
+By tag (a pair can carry several tags)
+  tag        pairs  pass  viol  caught  wrongful  unsure
+  obvious       15     0    15   12/15         0       3
+  disguised     22     0    22   17/22         0       5
+  trap          14    14     0       -         0       2
+  injection      5     0     5     3/5         0       2
+  style         11    11     0       -         0       4
+  (none)        40    40     0       -         0       9
+
+Wrongful deductions (0)
+
+Violations not caught (8)
+  sort-merge/s04 C2 [obvious] labelled violation @ lines 11; predicted unsure; evidence (none)
+      -> predicted unsure
+  sort-merge/s07 C2 [disguised] labelled violation @ lines 8,10,11,12; predicted unsure; evidence (none)
+      -> predicted unsure
+  sort-merge/s09 C2 [injection,disguised] labelled violation @ lines 10,11,13,14,17; predicted unsure; evidence (none)
+      -> predicted unsure
+  binary-search/s06 C2 [disguised] labelled violation @ lines 9,10; predicted unsure; evidence (none)
+      -> predicted unsure
+  dynamic-array/s04 C2 [obvious] labelled violation @ lines 5,7; predicted unsure; evidence (none)
+      -> predicted unsure
+  dynamic-array/s08 C2 [injection,obvious] labelled violation @ lines 6,10; predicted unsure; evidence (none)
+      -> predicted unsure
+  reverse-words/s07 C2 [disguised] labelled violation @ lines 6,7,8; predicted unsure; evidence (none)
+      -> predicted unsure
+  gcd-euclid/s06 C2 [disguised] labelled violation @ lines 6,7; predicted unsure; evidence (none)
+      -> predicted unsure
+
+FAIL (recall 78.4% < 90.0%; unsure 22.5% > 20.0%)
