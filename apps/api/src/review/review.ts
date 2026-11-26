@@ -2,7 +2,7 @@
 // review job and the checker CLI pass the data in and store what comes back.
 import { checkBanList } from './hard-rules.js';
 import {
-  ANSWER_SCHEMA,
+  answerSchema,
   ask,
   judgeAnswer,
   type JudgedAnswer,
@@ -78,7 +78,7 @@ async function askAbout(
   const request = {
     system: SYSTEM_PROMPT,
     prompt: buildPrompt({ statement, constraint, code }),
-    schema: ANSWER_SCHEMA,
+    schema: answerSchema(constraint.code),
   };
   const result = await ask(model, request, { timeoutMs, logCall });
   if (!result.ok) return { verdict: 'unsure', evidence: [], unsureReason: result.reason };

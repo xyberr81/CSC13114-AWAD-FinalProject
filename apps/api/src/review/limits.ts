@@ -96,14 +96,17 @@ export async function ask(
   return reply ? { ok: true, text: reply.text } : { ok: false, reason };
 }
 
-/** No field for a deduction: the TA sets those. */
-export const ANSWER_SCHEMA = {
+/**
+ * No field for a deduction: the TA sets those. `constraint` allows only the code asked about, so a
+ * provider that enforces the schema cannot put the verdict there (dev run of 2026-11-26).
+ */
+export const answerSchema = (constraint: string) => ({
   type: 'object',
   additionalProperties: false,
   required: ['reason', 'constraint', 'verdict', 'evidence'],
   properties: {
     reason: { type: 'string' },
-    constraint: { type: 'string' },
+    constraint: { type: 'string', enum: [constraint] },
     verdict: { type: 'string', enum: [...VERDICT_VALUES] },
     evidence: {
       type: 'array',
@@ -115,7 +118,7 @@ export const ANSWER_SCHEMA = {
       },
     },
   },
-};
+});
 
 interface Answer {
   verdict: VerdictValue;
