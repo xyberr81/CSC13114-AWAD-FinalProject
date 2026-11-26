@@ -1,0 +1,12 @@
+{
+  "model": "deepseek/deepseek-v4-flash-0731",
+  "modelOff": false,
+  "pairs": 102,
+  "hardRule": 55,
+  "modelCalls": 47,
+  "unsure": 23,
+  "failed": 0,
+  "promptTokens": 34294,
+  "completionTokens": 23916,
+  "costUsd": 0.008596154000000002
+}

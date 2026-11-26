@@ -55,7 +55,7 @@ ever sent to the model.
 | Tests           | Vitest — unit tests and HTTP contract tests        |
 | Lint and format | ESLint (type-aware), Prettier, `tsc --noEmit`      |
 | CI              | GitHub Actions                                     |
-| Model           | `anthropic/claude-haiku-5.5` via OpenRouter        |
+| Model           | `deepseek/deepseek-v4-flash-0731` via OpenRouter   |
 
 ## API
 
@@ -243,8 +243,16 @@ sudo /opt/leetkob/deploy/deploy.sh main   # every version: a branch or a tag
 
 ## Model and cost
 
-- Provider: [OpenRouter](https://openrouter.ai). Model: `anthropic/claude-haiku-5.5`. `LLM_MODEL` is
-  this name, not a key; the only key is `LLM_API_KEY`. Unit tests never call a real model.
+- Provider: [OpenRouter](https://openrouter.ai). Model: `deepseek/deepseek-v4-flash-0731`.
+  `LLM_MODEL` is this name, not a key; the only key is `LLM_API_KEY`. Unit tests never call a real
+  model.
+- The name has a date: the model behind it does not change, so a run can be repeated. Not an alias
+  such as `~deepseek/deepseek-flash-latest`, which moves to each new version.
+- OpenRouter sends each call to one of several providers of this model. The request asks only for
+  providers that enforce the JSON schema (`provider.require_parameters`). Their prices differ: on
+  2026-11-26 OpenRouter listed $0.06 per million input tokens and $0.18 per million output tokens,
+  and its providers ranged from $0.047 to $0.44 input. The call log keeps the cost OpenRouter
+  reports for each call.
 - Spending cap: the project's API key ("AWAD Final Project") has a **credit limit of $2 in
   total**, set on the key in OpenRouter when it was created on 2026-11-11. The limit does not
   reset, and the key expires on 2027-05-10

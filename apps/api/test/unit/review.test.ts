@@ -141,6 +141,14 @@ describe('review() with a model', () => {
     ]);
   });
 
+  it('asks for a schema whose only constraint is the one asked about, so the provider enforces it', async () => {
+    const { requests } = await reviewed(answer({}));
+    expect(requests[0]?.schema).toMatchObject({
+      required: expect.arrayContaining(['constraint']) as unknown,
+      properties: { constraint: { type: 'string', enum: ['C2'] } },
+    });
+  });
+
   it('sends no comment and no identity, and logs exactly what it sent', async () => {
     const { requests, calls } = await reviewed(answer({}));
     expect(requests[0]?.prompt).not.toMatch(/Le Thi B|23129999|answer pass/);

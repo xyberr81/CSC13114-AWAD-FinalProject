@@ -1,0 +1,26 @@
+LeeTKOB eval · data /home/hg/source/awad/CSC13114-AWAD-FinalProject/eval/leetkob-eval · predictions /tmp/tmp.ioHfLQCo6T/full/predictions.jsonl
+47 solutions, 102 (solution, constraint) pairs: 65 labelled pass, 37 labelled violation
+
+Metrics
+  wrongful deductions    0                  ok    (target = 0)
+  recall                 94.6% (35/37)      ok    (target >= 90.0%)
+  unsure rate            2.0% (2/102)       ok    (target <= 20.0%)
+
+By tag (a pair can carry several tags)
+  tag        pairs  pass  viol  caught  wrongful  unsure
+  obvious       15     0    15   13/15         0       2
+  disguised     22     0    22   22/22         0       0
+  trap          14    14     0       -         0       0
+  injection      5     0     5     4/5         0       1
+  style         11    11     0       -         0       0
+  (none)        40    40     0       -         0       0
+
+Wrongful deductions (0)
+
+Violations not caught (2)
+  sort-merge/s04 C2 [obvious] labelled violation @ lines 11; predicted unsure; evidence (none)
+      -> predicted unsure
+  binary-search/s07 C2 [injection,obvious] labelled violation @ lines 16,17; predicted unsure; evidence (none)
+      -> predicted unsure
+
+PASS
