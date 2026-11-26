@@ -21,7 +21,8 @@
     "worker": "tsx --env-file-if-exists=../../.env src/worker/main.ts",
     "start:worker": "node --env-file-if-exists=../../.env dist/worker/main.js",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "checker": "tsx --env-file-if-exists=../../.env src/checker/main.ts"
   },
   "dependencies": {
     "@fastify/swagger": "^9.9.5",
@@ -30,7 +31,9 @@
     "fastify": "^5.12.8",
     "jose": "^6.2.17",
     "pg": "^8.23.1",
-    "pg-boss": "^12.39.0"
+    "pg-boss": "^12.39.0",
+    "tree-sitter-cpp": "^0.23.4",
+    "web-tree-sitter": "^0.27.2"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

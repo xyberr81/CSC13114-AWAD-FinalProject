@@ -28,7 +28,8 @@
     "start:worker": "npm run start:worker -w @leetkob/api",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run test:contract && npm run test:queue",
     "db:generate": "npm run db:generate -w @leetkob/api",
-    "db:migrate": "npm run db:migrate -w @leetkob/api"
+    "db:migrate": "npm run db:migrate -w @leetkob/api",
+    "checker": "npm run --silent checker -w @leetkob/api --"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

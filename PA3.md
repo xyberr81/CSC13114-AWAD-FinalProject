@@ -36,7 +36,23 @@ Walk-through of criterion 1, in Swagger UI:
 
 ## 3. Checker
 
-Command, Docker build line and `MODEL_OFF=1`: **TODO** (comes with the checker).
+Command (model on, needs `LLM_PROVIDER`, `LLM_MODEL` and `LLM_API_KEY` in `.env`):
+
+```bash
+npm run checker -- eval/leetkob-eval --out predictions.jsonl --calls calls.jsonl
+```
+
+Docker build line, and the run with the model off (`MODEL_OFF=1`), without network or key:
+
+```bash
+docker build -t leetkob-checker -f Dockerfile.checker .
+docker run --rm --network none -e MODEL_OFF=1 -v "$PWD/eval/leetkob-eval:/data:ro" \
+  leetkob-checker /data > predictions.jsonl
+node eval/leetkob-eval/eval.mjs --data eval/leetkob-eval --predictions predictions.jsonl
+```
+
+Expected with the model off: 102 lines, 0 wrongful deductions, `eval.mjs` exits with 1. Options and
+exit codes: README §Checker.
 
 Own cases: `eval/own-cases/`.
 

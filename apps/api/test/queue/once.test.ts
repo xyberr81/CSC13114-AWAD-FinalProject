@@ -63,7 +63,12 @@ const WAIT = { timeout: 20_000, interval: 100 };
 async function expectOneSet(id: number) {
   expect(await statusOf(env, id)).toBe('accepted');
   expect(await results(id)).toHaveLength(2);
-  expect((await verdictsOf(env, id)).map((v) => v.verdict)).toEqual(['unsure', 'unsure']);
+  // With the model off: C1 is a ban list, which a hard rule decides; C2 is semantic.
+  const stored = (await verdictsOf(env, id)).sort((a, b) => a.constraintId - b.constraintId);
+  expect(stored.map((v) => [v.verdict, v.source, v.unsureReason])).toEqual([
+    ['pass', 'hard_rule', null],
+    ['unsure', 'model', 'model_off'],
+  ]);
   expect(await env.jobs('review', id)).toHaveLength(1);
 }
 
@@ -207,6 +212,25 @@ describe('the review job', () => {
       { verdict: 'pass', source: 'hard_rule', evidence: [], unsureReason: null },
       { verdict: 'violation', source: 'model', evidence: [{ line: 1, text: 'int main() {}' }] },
     ]);
+  });
+
+  it('stores the explanation of a verdict, and null when there is none', async () => {
+    const id = await submitted(env, await makeLab(env));
+    reviewSpy.mockResolvedValue([
+      { constraint: 'C1', verdict: 'pass', evidence: [], source: 'hard_rule', unsureReason: null },
+      {
+        constraint: 'C2',
+        verdict: 'unsure',
+        evidence: [],
+        source: 'model',
+        unsureReason: 'model_unsure',
+        explanation: 'The loop may be a copy.',
+      },
+    ]);
+    await handleJudge(deps(), id);
+    await handleReview(deps(), id);
+    const stored = (await verdictsOf(env, id)).sort((a, b) => a.constraintId - b.constraintId);
+    expect(stored.map((v) => v.explanation)).toEqual([null, 'The loop may be a copy.']);
   });
 
   it('asks only about constraints that have no verdict yet', async () => {
