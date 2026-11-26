@@ -9,7 +9,7 @@ Team: 23120024 — Nguyễn Thanh Bình · 23120046 — Hồ Thùy Hương · 23
 Model inside the product: `deepseek/deepseek-v4-flash-0731` through OpenRouter (key with a $2 credit limit,
 README §Model and cost). Data that leaves our system: the lab statement, one constraint, and the
 submission code without comments, with string words masked and student IDs zeroed (brief §3).
-Cost of one lab of 80: not measured yet (README §Model and cost).
+Cost of one lab of 80: $0.017, measured on the dev set on 2026-11-26 (README §Model and cost).
 
 ---
 
@@ -311,3 +311,28 @@ Not checked yet: this model can reason before it answers. Whether that fits in t
 of a call, and what it costs, is what the trial of three calls before the dev-set run will show.
 
 By hand: Hương chose the model.
+
+## 2026-11-26: the real-model runs on the dev set
+
+Tool: Claude Code.
+Asked for: a script that runs the checker with the real model (a trial of three calls, the cost,
+a confirmation, the full run, `eval.mjs`, checks of the call log), then the run itself.
+Kept: the script refuses uncommitted code, so a run names the commit it measured, and it never
+overwrites a run. Its checks: 102 predictions, each of the 47 semantic pairs called once, no call
+for a ban list, request ids, no comment of the code in a prompt, no key in the files, `eval.mjs` and
+`labels.jsonl` unchanged. Both runs are committed in `eval/runs/`.
+Changed:
+
+- First run (`25b065d`): 0 wrongful deductions, recall 78.4%, unsure 22.5%. All 23 `unsure` came
+  from one thing: the model wrote `"pass"` or `"violation"` in the `constraint` field. The schema
+  allowed any string there. It now allows only the code asked about, so the provider enforces it:
+  test `8440e34` (red), then `8a7f449`. The check that the answer names that code is still there.
+- Second run (`8a7f449`): 0 wrongful deductions, recall 94.6% (35/37), unsure 2.0% (2/102). Cost of
+  a lab of 80: 80 × 1.00 × $0.000213 = $0.017.
+
+Not changed: the prompt and the hard rules. The fix is about the shape of every answer, not about a
+problem of the dev set.
+Not done yet: one answer wrote spaces until the 4000 output tokens ran out (18 s, the most
+expensive call of the run). It is `unsure`, as an answer that does not fit the schema should be.
+
+By hand: Hương asked for both runs and for the fix between them.

@@ -58,7 +58,17 @@ Own cases: `eval/own-cases/`.
 
 ## 4. Real-model run on the dev set
 
-Folder `eval/runs/<date>-<model>/`: **TODO**
+Model `deepseek/deepseek-v4-flash-0731`, 2026-11-26. Each folder has `predictions.jsonl`, the
+`eval.mjs` report (`eval.txt`, `eval.json`), the call log with the provider's request ids
+(`calls.jsonl`), `cost.txt` and the commit it ran (`run.txt`).
+
+| Folder in `eval/runs/`                         | Commit    | Wrongful | Recall        | Unsure         |
+| ---------------------------------------------- | --------- | -------: | ------------- | -------------- |
+| `2026-11-26-deepseek-v4-flash-0731`            | `25b065d` |        0 | 78.4% (29/37) | 22.5% (23/102) |
+| `2026-11-26-deepseek-v4-flash-0731-schema-fix` | `8a7f449` |        0 | 94.6% (35/37) | 2.0% (2/102)   |
+
+The first run is before the schema fix (README §Checker). Cost of a lab of 80, from the second run:
+80 × 1.00 × $0.000213 = $0.017 (README §Model and cost).
 
 ## 5. Recording
 

@@ -229,6 +229,19 @@ docker run --rm --network none -e MODEL_OFF=1 -v "$PWD/eval/leetkob-eval:/data:r
 With the model off, the hard rules decide 55 of the 102 pairs of the dev set with 0 wrongful
 deductions; the other 47 are `unsure`, so `eval.mjs` exits with 1 (recall 40.5%, unsure 46.1%).
 
+With `deepseek/deepseek-v4-flash-0731`, measured on 2026-11-26 (the folder has the predictions, the
+`eval.mjs` report and the call log with the provider's request ids):
+
+| Run in `eval/runs/`                            | Commit    | Wrongful | Recall        | Unsure         |
+| ---------------------------------------------- | --------- | -------: | ------------- | -------------- |
+| `2026-11-26-deepseek-v4-flash-0731`            | `25b065d` |        0 | 78.4% (29/37) | 22.5% (23/102) |
+| `2026-11-26-deepseek-v4-flash-0731-schema-fix` | `8a7f449` |        0 | 94.6% (35/37) | 2.0% (2/102)   |
+
+In the first run the model put the verdict in the `constraint` field of 23 answers, which were then
+`unsure`. The schema now allows only the code of the constraint asked about. The two violations
+still missed are `unsure`: one answer gave no evidence line, and one wrote spaces until the 4000
+output tokens ran out, so it was not valid JSON.
+
 ## Deployment
 
 <https://leetkob-awad.centralindia.cloudapp.azure.com>: one Ubuntu server. Caddy (HTTPS), the API and
@@ -259,9 +272,12 @@ sudo /opt/leetkob/deploy/deploy.sh main   # every version: a branch or a tag
   ([screenshot](docs/evidence/openrouter-key-cap.png): $0.000 used, never used). Once the $2 is
   spent, OpenRouter refuses requests made with that key. The key lives only in each
   member's `.env` (`LLM_API_KEY`), never in the repository, CI or the sandbox.
-- Cost of one lab (80 submissions): not measured yet. It will be the cost of the dev-set run in its
-  call log ÷ its model calls × semantic constraints per submission × 80. A ban list costs nothing:
-  the model is not called for it.
+- Cost of one lab (80 submissions), from the call log of the run after the schema fix: $0.010028
+  for 47 calls is $0.000213 per call; the dev set has 47 semantic constraints for 47 solutions, 1.00
+  per submission; 80 × 1.00 × $0.000213 = **$0.017**. A ban list costs nothing: the model is not
+  called for it. A lab with more semantic constraints per submission costs that many times more.
+- Spent on 2026-11-26: $0.018624 for the two committed runs, $0.019892 with the three trials of
+  three calls before them (call logs and the run script's output).
 - Data sent to the model: the lab statement, one constraint, and the submission code without
   comments, with the words of string literals masked and eight-digit student IDs in identifiers
   zeroed. Nothing else.
