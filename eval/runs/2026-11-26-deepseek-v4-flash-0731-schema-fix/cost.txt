@@ -1,0 +1,7 @@
+Model: deepseek/deepseek-v4-flash-0731
+Calls: 47, with a request id: 47, with a cost: 47
+Tokens: 34294 in, 28658 out
+Cost of this run: 0.010028 USD
+Per call: 0.010028 / 47 = 0.000213 USD
+Semantic constraints per submission: 47 / 47 = 1.00
+Lab of 80: 80 x 1.00 x 0.000213 = 0.017069 USD
