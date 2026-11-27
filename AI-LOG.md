@@ -238,6 +238,21 @@ also against the harmful answer; worker stopped, submit, started: one set of ver
 
 By hand: the Azure account and login, the approval of the cost and of every commit message.
 
+## 2026-11-27: continuous deployment
+
+Tool: Claude Code.
+Asked for: deploy `main` to the server on every green merge.
+Found first: the server still ran a build from before the PA#3 API. `POST /v1/auth/login`,
+`/v1/classes` and `/docs` answered 404 while `POST /v1/labs/1/submissions` answered 401, which
+matches the `deploy` branch of 2026-11-24. Nothing redeployed it after the later merges.
+Kept: a `deploy` workflow after CI on `main`, SSH with one key in a GitHub secret, the host key
+pinned in a repository variable, and a check that the new routes answer.
+Changed: the assistant first argued for a timer on the server that pulls `main`, so that no secret
+sits in GitHub, and cited "CI stores no secret" from PA2.md. That line described CI at the `pa2`
+tag, not a rule. We kept the secret and limited what it can do instead: a `deploy` user, a forced
+command in `authorized_keys` and one sudo rule, so the key runs `deploy.sh main` and nothing else.
+Rejected: `StrictHostKeyChecking=no`, which would hand the key to any server answering on that name.
+
 ## 2026-11-24: hard rules
 
 Tool: Claude Code.
