@@ -1,0 +1,46 @@
+name: Deploy
+
+# Every push to main whose CI is green goes to the server (README, "Deployment"). The key in
+# DEPLOY_SSH_KEY can only run `deploy.sh main` there: setup.sh puts it in authorized_keys with a
+# forced command.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions: {}
+
+# One deployment at a time, and never one cut off halfway.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://${{ vars.DEPLOY_HOST }}/docs
+    env:
+      HOST: ${{ vars.DEPLOY_HOST }}
+    steps:
+      - name: deploy main on the server
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          # The server's host key, pinned: a server that answers with another key gets nothing.
+          KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 "deploy@$HOST"
+      - name: the new API answers
+        run: |
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors "https://$HOST/v1/health"
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors -o /dev/null "https://$HOST/docs/json"

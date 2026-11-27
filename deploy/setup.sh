@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Prepares a fresh Ubuntu 24.04 server, once. Run as root: setup.sh <dns-name>
-# Then put the model key in /etc/leetkob/model.env by hand and run deploy.sh.
+# Prepares a fresh Ubuntu 24.04 server; safe to run again. Run as root:
+#   setup.sh <dns-name> [deploy-key.pub]
+# Then put the model key in /etc/leetkob/model.env by hand and run deploy.sh. With a public key, the
+# matching private key (a GitHub secret) can run `deploy.sh main` and nothing else (README, "Deployment").
 set -euo pipefail
 
 SITE=${1:?usage: setup.sh <dns-name>}
@@ -46,5 +48,24 @@ fi
 printf 'SITE_ADDRESS=%s\n' "$SITE" >/etc/leetkob/caddy.env
 [ -e /etc/leetkob/model.env ] || printf 'LLM_PROVIDER=openrouter\nLLM_MODEL=\nLLM_API_KEY=\n' \
   >/etc/leetkob/model.env
+
+DEPLOY_KEY=${2:-}
+if [ -n "$DEPLOY_KEY" ]; then
+  key=$(cat "$DEPLOY_KEY")
+  case $key in
+    ssh-ed25519\ *) ;;
+    *) echo "$DEPLOY_KEY: expected one ssh-ed25519 public key" >&2 && exit 1 ;;
+  esac
+  id deploy >/dev/null 2>&1 || useradd --create-home --shell /bin/sh deploy
+  printf 'deploy ALL=(root) NOPASSWD: /opt/leetkob/deploy/deploy.sh main\n' >/etc/sudoers.d/.leetkob-deploy
+  visudo -cqf /etc/sudoers.d/.leetkob-deploy
+  chmod 440 /etc/sudoers.d/.leetkob-deploy
+  mv /etc/sudoers.d/.leetkob-deploy /etc/sudoers.d/leetkob-deploy
+  # Whatever the client asks for, this key runs the deployment of main: no shell, no forwarding.
+  install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+  printf 'restrict,command="sudo -n /opt/leetkob/deploy/deploy.sh main" %s\n' "$key" \
+    >/home/deploy/.ssh/authorized_keys
+  chown deploy:deploy /home/deploy/.ssh/authorized_keys
+fi
 
 echo "Ready. Fill in /etc/leetkob/model.env, then run /opt/leetkob/deploy/deploy.sh"

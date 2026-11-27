@@ -238,9 +238,29 @@ mounts the Docker socket. The model key is only in `/etc/leetkob/model.env`, whi
 the review worker.
 
 ```bash
-sudo deploy/setup.sh <dns-name>           # once, on a fresh Ubuntu 24.04
-sudo /opt/leetkob/deploy/deploy.sh main   # every version: a branch or a tag
+sudo deploy/setup.sh <dns-name> [deploy-key.pub]   # once, on a fresh Ubuntu 24.04; safe to rerun
+sudo /opt/leetkob/deploy/deploy.sh main            # by hand: a branch or a tag
 ```
+
+Continuous deployment: when CI is green on a push to `main`, `.github/workflows/deploy.yml` logs in
+as the `deploy` user and runs `deploy.sh main`, then checks that `/v1/health` and `/docs/json`
+answer. Its key can do nothing else: `setup.sh` puts it in `authorized_keys` with
+`restrict,command="sudo -n /opt/leetkob/deploy/deploy.sh main"`, and sudo allows that one command.
+`main` only changes through a green pull request, so the deployment never runs code that failed CI.
+One deployment runs at a time; it deploys `main` as it is when the job starts.
+
+Turning it on, once:
+
+```bash
+ssh-keygen -t ed25519 -N '' -C leetkob-deploy -f deploy-key       # on your machine
+sudo /opt/leetkob/deploy/setup.sh <dns-name> deploy-key.pub        # on the server
+gh secret set DEPLOY_SSH_KEY < deploy-key && rm deploy-key
+gh variable set DEPLOY_HOST --body <dns-name>
+ssh-keyscan -t ed25519 <dns-name> | gh variable set DEPLOY_KNOWN_HOSTS
+```
+
+Compare the scanned key with `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` on the server
+before you trust it.
 
 ## Model and cost
 
