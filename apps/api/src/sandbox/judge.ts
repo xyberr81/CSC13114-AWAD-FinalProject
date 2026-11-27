@@ -60,20 +60,34 @@ cat > /tmp/main.cpp && g++ -std=c++17 -O2 -o /tmp/main /tmp/main.cpp && cat /tmp
 
 const OOM_MARK = 'leetkob-oom';
 
+const SIGXCPU_EXIT = 128 + 24;
+const SIGKILL_EXIT = 128 + 9;
+
 // stdin is the program, then its input. `exec` is left out on purpose: as PID 1 the program would
 // not get SIGXCPU. Its stderr is dropped, so it cannot fill ours. The kernel's own count of OOM kills
 // is read at the end, because Docker's OOMKilled flag can come late; shell builtins only, since the
 // program may have used up every process.
-const RUN_SCRIPT = `head -c "$1" > /tmp/main && chmod +x /tmp/main && echo ${START_MARK} >&2
+//
+// The CPU ulimit counts whole seconds and each process on its own: it only stops a program that never
+// ends. The container's own count decides, and PID 1 says so with its exit code, because the program
+// can reach every descriptor of PID 1 through /proc. A count that cannot be read before the program
+// starts is retried; one that cannot be read after it is the program's doing.
+const RUN_SCRIPT = `cpu() {
+  while read -r name value; do
+    [ "$name" = usage_usec ] && used=$value && return 0
+  done < /sys/fs/cgroup/cpu.stat
+  return 1
+}
+head -c "$1" > /tmp/main && chmod +x /tmp/main && cpu || exit 1
+limit=$((used + $2))
+echo ${START_MARK} >&2
 /tmp/main 2> /dev/null
 code=$?
+if ! cpu; then code=1; elif [ "$used" -gt "$limit" ]; then code=${SIGXCPU_EXIT}; fi
 while read -r event count; do
   [ "$event" = oom_kill ] && [ "$count" != 0 ] && echo ${OOM_MARK} >&2
 done < /sys/fs/cgroup/memory.events
 exit $code`;
-
-const SIGXCPU_EXIT = 128 + 24;
-const SIGKILL_EXIT = 128 + 9;
 
 /** The compiled program, or null when the code does not compile. */
 export async function compile(code: string): Promise<Buffer | null> {
@@ -110,7 +124,7 @@ export async function runProgram(
   const outcome = await runInSandbox({
     flags,
     script: RUN_SCRIPT,
-    args: [String(program.length)],
+    args: [String(program.length), String(limits.timeLimitMs * 1000)],
     stdin: Buffer.concat([program, Buffer.from(input, 'utf8')]),
     wallMs: limits.timeLimitMs * 3,
     maxOutputBytes: MAX_OUTPUT_BYTES,
@@ -134,7 +148,7 @@ export function statusOf(
   if (outcome.outputExceeded) return 'runtime_error';
   if (outcome.outOfMemory) return 'memory_limit';
   const cpuMs = cpuSecondsOf(limits) * 1000;
-  // SIGXCPU, or the hard limit's SIGKILL on a program that ignored SIGXCPU.
+  // SIGXCPU, the script's own verdict, or the hard limit's SIGKILL on a program that ignored SIGXCPU.
   const cpuExceeded =
     outcome.exitCode === SIGXCPU_EXIT ||
     (outcome.exitCode === SIGKILL_EXIT && outcome.wallMs >= cpuMs);

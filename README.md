@@ -187,9 +187,10 @@ it removes the containers the last one left.
 
 Student code is compiled and run only in one-shot containers (`apps/api/src/sandbox/docker.ts`):
 no network, no mounts, no environment of ours, uid 65534, read-only root, 16 processes, all
-capabilities dropped. Limits are those of FAQ-05: 1 s CPU per test, wall clock 3× that, which kills
-the container, 256 MB with swap included, 1 MB of output. Compiling gets 10 s and 512 MB: a program
-that uses `<regex>` does not compile within 256 MB.
+capabilities dropped. Limits are those of FAQ-05: 1 s CPU per test for all its processes together
+(from the container's `cpu.stat`), wall clock 3× that, which kills the container, 256 MB with swap
+included, 1 MB of output. Compiling gets 10 s and 512 MB: a program that uses `<regex>` does not
+compile within 256 MB.
 
 `apps/api/test/sandbox/attacks.test.ts` has an attack submission for each of the nine minimums of
 the brief, and `controls.test.ts` takes one limit away at a time and checks that the attack then
