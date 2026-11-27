@@ -7,6 +7,7 @@ import { classMembers, idempotencyKeys, labs, submissions, users } from '../db/s
 import { isValidIdempotencyKey, submissionFingerprint } from '../idempotency.js';
 import { ProblemError } from '../problem.js';
 import type { JobQueue } from '../queue/queue.js';
+import { text } from '../schemas.js';
 
 export interface SubmissionRouteDeps {
   db: Db;
@@ -36,7 +37,7 @@ const bodySchema = {
   required: ['language', 'code'],
   properties: {
     language: { type: 'string', enum: ['cpp'] },
-    code: { type: 'string', minLength: 1, maxLength: 65_536, pattern: '\\S' },
+    code: text(1, 65_536),
   },
 } as const;
 
