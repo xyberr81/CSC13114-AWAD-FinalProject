@@ -58,17 +58,19 @@ Own cases: `eval/own-cases/`.
 
 ## 4. Real-model run on the dev set
 
-Model `deepseek/deepseek-v4-flash-0731`, 2026-11-26. Each folder has `predictions.jsonl`, the
-`eval.mjs` report (`eval.txt`, `eval.json`), the call log with the provider's request ids
-(`calls.jsonl`), `cost.txt` and the commit it ran (`run.txt`).
+Model `claude-haiku-5-5` at Anthropic, 2026-11-28: the last row. Each folder has
+`predictions.jsonl`, the `eval.mjs` report (`eval.txt`, `eval.json`), the call log with the
+provider's request ids (`calls.jsonl`), `cost.txt` and the commit it ran (`run.txt`).
 
-| Folder in `eval/runs/`                         | Commit    | Wrongful | Recall        | Unsure         |
-| ---------------------------------------------- | --------- | -------: | ------------- | -------------- |
-| `2026-11-26-deepseek-v4-flash-0731`            | `25b065d` |        0 | 78.4% (29/37) | 22.5% (23/102) |
-| `2026-11-26-deepseek-v4-flash-0731-schema-fix` | `8a7f449` |        0 | 94.6% (35/37) | 2.0% (2/102)   |
+| Folder in `eval/runs/`                         | Commit    | Wrongful | Recall         | Unsure         |
+| ---------------------------------------------- | --------- | -------: | -------------- | -------------- |
+| `2026-11-26-deepseek-v4-flash-0731`            | `25b065d` |        0 | 78.4% (29/37)  | 22.5% (23/102) |
+| `2026-11-26-deepseek-v4-flash-0731-schema-fix` | `8a7f449` |        0 | 94.6% (35/37)  | 2.0% (2/102)   |
+| `2026-11-28-claude-haiku-5-5`                  | `dc1977b` |        0 | 100.0% (37/37) | 0.0% (0/102)   |
 
-The first run is before the schema fix (README §Checker). Cost of a lab of 80, from the second run:
-80 × 1.00 × $0.000213 = $0.017 (README §Model and cost).
+The first two rows are the earlier model, `deepseek/deepseek-v4-flash-0731` through OpenRouter,
+before and after the schema fix (README §Checker). Cost of a lab of 80, from the last run:
+80 × 1.00 × $0.000235 = $0.019 (README §Model and cost).
 
 ## 5. Recording
 
