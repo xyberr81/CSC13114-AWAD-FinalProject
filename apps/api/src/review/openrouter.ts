@@ -1,4 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises';
+import { createAnthropicClient } from './anthropic.js';
 import { CostLimitError, type ModelClient, type ModelReply, type ModelRequest } from './limits.js';
 
 const URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -101,10 +102,14 @@ export function createOpenRouterClient({
   };
 }
 
+const PROVIDERS = { openrouter: createOpenRouterClient, anthropic: createAnthropicClient };
+
 /** For the review worker and the checker; throws when a variable is missing. */
 export function modelFromEnv(env: NodeJS.ProcessEnv = process.env): ModelClient {
-  if (env.LLM_PROVIDER !== 'openrouter') throw new Error('LLM_PROVIDER must be openrouter');
+  const provider = env.LLM_PROVIDER;
+  if (provider !== 'openrouter' && provider !== 'anthropic')
+    throw new Error('LLM_PROVIDER must be openrouter or anthropic');
   if (!env.LLM_MODEL) throw new Error('LLM_MODEL is required');
   if (!env.LLM_API_KEY) throw new Error('LLM_API_KEY is required');
-  return createOpenRouterClient({ apiKey: env.LLM_API_KEY, model: env.LLM_MODEL });
+  return PROVIDERS[provider]({ apiKey: env.LLM_API_KEY, model: env.LLM_MODEL });
 }
