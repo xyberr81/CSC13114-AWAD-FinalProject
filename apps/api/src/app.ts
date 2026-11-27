@@ -1,6 +1,8 @@
 import Fastify, {
   type FastifyError,
   type FastifyInstance,
+  type FastifyReply,
+  type FastifyRequest,
   type FastifyServerOptions,
 } from 'fastify';
 import {
@@ -38,6 +40,13 @@ export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): Fastif
   const app = Fastify({
     ...opts,
     ajv: { customOptions: { allErrors: true, coerceTypes: false, keywords } },
+    // A long id must reach its route's checks, so the token is checked first. Node's 16 KiB header
+    // limit bounds the URL.
+    routerOptions: { maxParamLength: 16 * 1024 },
+    // A URL that cannot be decoded never reaches the handlers below.
+    frameworkErrors: (_error, request, reply) => {
+      void noSuchPath(request, reply);
+    },
   });
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
@@ -46,13 +55,7 @@ export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): Fastif
     return reply.status(body.status).type(PROBLEM_JSON).send(body);
   });
 
-  app.setNotFoundHandler((request, reply) => {
-    const body = problem(
-      'not-found',
-      `No such path: ${request.method} ${request.url.split('?')[0]}`,
-    );
-    return reply.status(404).type(PROBLEM_JSON).send(body);
-  });
+  app.setNotFoundHandler(noSuchPath);
 
   // Bodies are JSON only: without this, Fastify would accept text/plain as a string (§2, 415).
   app.removeContentTypeParser('text/plain');
@@ -78,6 +81,11 @@ export function buildApp(deps: AppDeps, opts: FastifyServerOptions = {}): Fastif
   void app.register(reviewQueueRoutes, { prefix: '/v1', ...deps });
 
   return app;
+}
+
+function noSuchPath(request: FastifyRequest, reply: FastifyReply) {
+  const body = problem('not-found', `No such path: ${request.method} ${request.url.split('?')[0]}`);
+  return reply.status(404).type(PROBLEM_JSON).send(body);
 }
 
 function toProblem(error: FastifyError): Problem {
