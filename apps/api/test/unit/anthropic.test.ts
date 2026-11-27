@@ -38,7 +38,9 @@ function setup(...responses: (() => Promise<Response>)[]) {
 }
 const sent = (fetch: ReturnType<typeof setup>['fetch']) => {
   const [url, init] = fetch.mock.calls[0]!;
-  return { url: String(url), headers: new Headers(init?.headers), body: String(init?.body) };
+  const href = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
+  const body = typeof init?.body === 'string' ? init.body : '';
+  return { url: href, headers: new Headers(init?.headers), body };
 };
 
 afterEach(() => {
