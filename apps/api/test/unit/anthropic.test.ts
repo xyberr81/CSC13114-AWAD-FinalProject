@@ -63,12 +63,13 @@ describe('a request to Anthropic', () => {
     expect(parsed).not.toHaveProperty('temperature');
   });
 
-  it('has the key in the x-api-key header and nowhere else', async () => {
+  // SDK 1.x sends the key as a bearer token, not in x-api-key.
+  it('has the key in the authorization header and nowhere else', async () => {
     const { fetch, complete } = setup(json(message()));
     await complete();
     const { url, headers, body } = sent(fetch);
-    expect(headers.get('x-api-key')).toBe(KEY);
-    headers.delete('x-api-key');
+    expect(headers.get('authorization')).toBe(`Bearer ${KEY}`);
+    headers.delete('authorization');
     expect(JSON.stringify([url, [...headers.entries()], body])).not.toContain(KEY);
   });
 
@@ -79,8 +80,8 @@ describe('a request to Anthropic', () => {
     await complete();
     const { url, headers } = sent(fetch);
     expect(url).toBe('https://api.anthropic.com/v1/messages');
-    expect(headers.get('authorization')).toBeNull();
-    expect(headers.get('x-api-key')).toBe(KEY);
+    expect(headers.get('authorization')).toBe(`Bearer ${KEY}`);
+    expect(JSON.stringify([...headers.entries()])).not.toContain('other-token');
   });
 });
 
