@@ -55,7 +55,7 @@ ever sent to the model.
 | Tests           | Vitest — unit tests and HTTP contract tests        |
 | Lint and format | ESLint (type-aware), Prettier, `tsc --noEmit`      |
 | CI              | GitHub Actions                                     |
-| Model           | `deepseek/deepseek-v4-flash-0731` via OpenRouter   |
+| Model           | `claude-opus-5-5` on the Claude Platform           |
 
 ## API
 
@@ -215,7 +215,7 @@ node eval/leetkob-eval/eval.mjs --data eval/leetkob-eval --predictions predictio
 | `--concurrency <n>` | pairs reviewed at once, 4 by default                                             |
 | `MODEL_OFF=1`       | hard rules only: every semantic constraint is `unsure`, and no network is needed |
 
-Otherwise it needs `LLM_PROVIDER=openrouter`, `LLM_MODEL` and `LLM_API_KEY` from `.env`. The summary
+Otherwise it needs `LLM_PROVIDER=anthropic`, `LLM_MODEL` and `LLM_API_KEY` from `.env`. The summary
 goes to standard error. Exit code: 0 done, 1 some pair failed, 2 wrong usage or missing settings;
 through `npm` every failure is 1.
 
@@ -264,22 +264,21 @@ before you trust it.
 
 ## Model and cost
 
-- Provider: [OpenRouter](https://openrouter.ai). Model: `deepseek/deepseek-v4-flash-0731`.
-  `LLM_MODEL` is this name, not a key; the only key is `LLM_API_KEY`. Unit tests never call a real
-  model.
-- The name has a date: the model behind it does not change, so a run can be repeated. Not an alias
-  such as `~deepseek/deepseek-flash-latest`, which moves to each new version.
-- OpenRouter sends each call to one of several providers of this model. The request asks only for
-  providers that enforce the JSON schema (`provider.require_parameters`). Their prices differ: on
-  2026-11-26 OpenRouter listed $0.06 per million input tokens and $0.18 per million output tokens,
-  and its providers ranged from $0.047 to $0.44 input. The call log keeps the cost OpenRouter
-  reports for each call.
-- Spending cap: the project's API key ("AWAD Final Project") has a **credit limit of $2 in
-  total**, set on the key in OpenRouter when it was created on 2026-11-11. The limit does not
-  reset, and the key expires on 2027-05-10
-  ([screenshot](docs/evidence/openrouter-key-cap.png): $0.000 used, never used). Once the $2 is
-  spent, OpenRouter refuses requests made with that key. The key lives only in each
-  member's `.env` (`LLM_API_KEY`), never in the repository, CI or the sandbox.
+- Provider: the [Claude Platform](https://platform.claude.com), through the official
+  `@anthropic-ai/sdk`. Model: `claude-opus-5-5`. `LLM_MODEL` is this name, not a key; the only key
+  is `LLM_API_KEY`, a Claude Console API key. Unit tests never call a real model.
+- The API enforces the JSON schema of the answer (`output_config.format`), and the answer is
+  checked again here. Effort is `medium`; thinking counts towards the 4000 output tokens of a call,
+  and an answer cut off there becomes `unsure`.
+- Price on 2026-11-28: $4 per million input tokens and $20 per million output tokens. The provider
+  does not report a cost, so the call log keeps the tokens times this price
+  (`apps/api/src/review/anthropic.ts`). A model with no price there is logged without a cost.
+- Spending cap: **not set yet.** Before the key is used, set a spend limit on the Claude Console
+  workspace that holds it. A request refused for billing (HTTP 402) makes the constraint `unsure`
+  with the reason `cost_limit`. The key lives only in each member's `.env` (`LLM_API_KEY`), never in
+  the repository, CI or the sandbox.
+- Until 2026-11-28 the provider was OpenRouter, with `deepseek/deepseek-v4-flash-0731` and a key
+  with a $2 credit limit ([screenshot](docs/evidence/openrouter-key-cap.png)).
 - Cost of one lab (80 submissions): not measured yet. It will be the cost of the dev-set run in its
   call log ÷ its model calls × semantic constraints per submission × 80. A ban list costs nothing:
   the model is not called for it.

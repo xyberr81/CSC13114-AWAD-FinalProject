@@ -1,4 +1,4 @@
-import { modelFromEnv } from '../review/openrouter.js';
+import { modelFromEnv } from '../review/anthropic.js';
 import type { ModelClient } from '../review/review.js';
 import type { WorkerConfig } from './config.js';
 

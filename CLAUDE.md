@@ -12,7 +12,7 @@ Lines marked _(story)_ come from something that actually went wrong; the AI-LOG 
 - TypeScript is pinned to `~6.0`: typescript-eslint does not support 7 yet. _(story: AI-LOG
   2026-11-10 "scaffold")_
 - pg-boss queue on the same PostgreSQL, Docker sandbox with `gcc`. Hard rules: web-tree-sitter (WASM)
-  with the tree-sitter-cpp grammar. Model: OpenRouter, only through `review()`.
+  with the tree-sitter-cpp grammar. Model: the Claude Platform, only through `review()`.
 
 ## Commands
 

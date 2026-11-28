@@ -1,6 +1,6 @@
 // The checker command: a dataset folder in, a prediction file out.
 import { appendFileSync, writeFileSync } from 'node:fs';
-import { modelFromEnv } from '../review/openrouter.js';
+import { modelFromEnv } from '../review/anthropic.js';
 import type { ModelClient } from '../review/review.js';
 import { parseArguments, USAGE, UsageError } from './arguments.js';
 import { check } from './check.js';

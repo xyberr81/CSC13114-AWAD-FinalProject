@@ -3,7 +3,7 @@ import { loadWorkerConfig } from '../../src/worker/config.js';
 import { workerModel } from '../../src/worker/model.js';
 
 const DATABASE_URL = 'postgres://localhost/x';
-const LLM = { LLM_PROVIDER: 'openrouter', LLM_MODEL: 'fake/model', LLM_API_KEY: 'k' };
+const LLM = { LLM_PROVIDER: 'anthropic', LLM_MODEL: 'fake/model', LLM_API_KEY: 'k' };
 const modelFor = (env: NodeJS.ProcessEnv) =>
   workerModel(loadWorkerConfig({ DATABASE_URL, ...env }), env);
 const request = { system: 's', prompt: 'p', schema: {}, signal: new AbortController().signal };

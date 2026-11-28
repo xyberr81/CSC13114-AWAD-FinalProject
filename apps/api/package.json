@@ -25,6 +25,7 @@
     "checker": "tsx --env-file-if-exists=../../.env src/checker/main.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0",
     "@fastify/swagger": "^9.9.5",
     "@fastify/swagger-ui": "^6.1.5",
     "drizzle-orm": "^0.45.4",

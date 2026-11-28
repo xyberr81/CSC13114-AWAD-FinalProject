@@ -6,8 +6,8 @@ Team: 23120024 — Nguyễn Thanh Bình · 23120046 — Hồ Thùy Hương · 23
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Claude Code (VS Code), Claude Opus 5.5 | repository scaffold, CI, rules file, contract draft, contract and unit tests, implementation, PA#2 evidence and PRs |
 
-Model inside the product: `deepseek/deepseek-v4-flash-0731` through OpenRouter (key with a $2 credit limit,
-README §Model and cost). Data that leaves our system: the lab statement, one constraint, and the
+Model inside the product: `claude-opus-5-5` on the Claude Platform since 2026-11-28 (before that
+`deepseek/deepseek-v4-flash-0731` through OpenRouter; README §Model and cost). Data that leaves our system: the lab statement, one constraint, and the
 submission code without comments, with string words masked and student IDs zeroed (brief §3).
 Cost of one lab of 80: not measured yet (README §Model and cost).
 
@@ -326,3 +326,25 @@ Not checked yet: this model can reason before it answers. Whether that fits in t
 of a call, and what it costs, is what the trial of three calls before the dev-set run will show.
 
 By hand: Hương chose the model.
+
+## 2026-11-28: the model provider becomes the Claude Platform
+
+Tool: Claude Code.
+Asked for: switch the model provider from OpenRouter to the Claude Platform, as a pull request on
+`foundation`.
+Kept: `ModelClient` and everything behind it. Only the client changed: `review/anthropic.ts`, on the
+official `@anthropic-ai/sdk`, replaces `review/openrouter.ts`, which was deleted with its test.
+`LLM_PROVIDER` is now `anthropic`; `LLM_MODEL` and `LLM_API_KEY` keep their names, so the judge
+worker's check and the sandbox tests for the key did not change.
+Changed:
+
+- The SDK does the retries (408, 409, 429, 5xx and the network, twice), which the old client did by
+  hand. A billing refusal (402) is a `CostLimitError`, and the key is masked in every error message.
+- The first unit test expected the key in an `x-api-key` header. A probe showed that SDK 1.14 sends it
+  as `authorization: Bearer`; the test was wrong, not the client.
+- The provider reports no cost, so the client works it out from the tokens and a price table.
+
+Not checked yet: no call has been made to the real API. The model (`claude-opus-5-5`) is the SDK
+guide's default, not a team choice, and no spend limit is set on the workspace.
+
+By hand: nothing yet. A member still has to choose the model and set the spend limit.

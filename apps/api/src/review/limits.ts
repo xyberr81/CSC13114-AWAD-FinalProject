@@ -7,7 +7,7 @@ export interface ModelRequest {
   system: string;
   prompt: string;
   /** The JSON schema of the answer, for providers that can enforce it. It is checked here anyway. */
-  schema: object;
+  schema: Record<string, unknown>;
   /** Aborted when the call runs out of time. */
   signal: AbortSignal;
 }
