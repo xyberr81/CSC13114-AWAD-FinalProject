@@ -281,7 +281,7 @@ Turning it on, once:
 ```bash
 ssh-keygen -t ed25519 -N '' -C leetkob-deploy -f deploy-key       # on your machine
 sudo /opt/leetkob/deploy/setup.sh <dns-name> deploy-key.pub        # on the server
-gh secret set DEPLOY_SSH_KEY < deploy-key && rm deploy-key
+gh secret set DEPLOY_SSH_KEY --env production < deploy-key && rm deploy-key
 gh variable set DEPLOY_HOST --body <dns-name>
 ssh-keyscan -t ed25519 <dns-name> | gh variable set DEPLOY_KNOWN_HOSTS
 gh variable set LLM_PROVIDER --env production --body <provider>

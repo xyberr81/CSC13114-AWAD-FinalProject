@@ -398,13 +398,15 @@ Changed:
 - A probe of `deploy.sh` with 21 inputs found that `read` dropped a last line without a newline, so
   the key line was lost. Fixed with `|| [ -n "$line" ]`; every bad input now stops before
   `cd /opt/leetkob`, and no message shows a value.
-- The first wording of `PERMISSIONS.md` put `DEPLOY_SSH_KEY` in the `production` environment; the
-  README sets it as a repository secret. Corrected.
+- `PERMISSIONS.md` was first changed to call `DEPLOY_SSH_KEY` a repository secret, because the README
+  set it without `--env`. `gh secret list --env production` showed it is an environment secret; the
+  README command now has `--env production`.
 
 Rejected: Azure Key Vault with the VM's managed identity, the usual way on Azure: we do not own the
 subscription.
 
-Not checked yet: no deployment has run with it. The settings of the repository (the variables, the
-secret, and the rule that only `main` may deploy to `production`) are not set.
+Not checked yet: no deployment has run with it.
 
-By hand: Bình chose this way.
+By hand: Bình chose this way and allowed only `main` to deploy to `production`. The assistant set
+`LLM_PROVIDER`, `LLM_MODEL` and `LLM_API_KEY` there on 2026-11-28; the key went from a private input
+to `gh secret set` without being shown.
