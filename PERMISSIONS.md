@@ -68,5 +68,5 @@ dependencies, the database history and `main` under a human.
 - CI needs no stored secret: its database is a throw-away service container with no password,
   and `JWT_SECRET` is generated for each run.
 - History scan: `gitleaks` over the full history before submitting — see `PA2.md`.
-- The model API key is an OpenRouter key with a $2 credit limit set on the key itself, recorded
-  in README §Model and cost. It lives only in `.env`, which the assistant may not read.
+- The model API key is an Anthropic key. Its Claude Console workspace has a spend limit of $50 a
+  month, recorded in README §Model and cost. It lives only in `.env`, which the assistant may not read.

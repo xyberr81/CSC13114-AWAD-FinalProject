@@ -275,8 +275,9 @@ sudo /opt/leetkob/deploy/deploy.sh main   # every version: a branch or a tag
   thinking, if any, is counted as output tokens. Anthropic reports tokens, not money, so the client
   computes the cost of each call from this price (`apps/api/src/review/anthropic.ts`) and the call
   log keeps it.
-- Spending cap: **TODO** — the cap on the Anthropic key and its screenshot. When Anthropic refuses a
-  call for the cap (429 `enforced_spend_limit_reached`) or for lack of credit (402), the verdict
+- Spending cap: a spend limit of **$50 a month** on the Claude Console workspace that holds the key
+  (no screenshot yet). At the dev-set cost of a lab below, that is about 2,600 labs a month. When
+  Anthropic refuses a call for the cap (429 `enforced_spend_limit_reached`) or for lack of credit (402), the verdict
   becomes `unsure` with the reason `cost_limit`, and the call is not retried. The key lives only in
   each member's `.env` (`LLM_API_KEY`) and in the server's `/etc/leetkob/model.env`, never in the
   repository, CI or the sandbox.
