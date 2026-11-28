@@ -46,7 +46,7 @@ if [ ! -e /etc/leetkob/postgres.env ]; then
     "$password" >/etc/leetkob/worker.env
 fi
 printf 'SITE_ADDRESS=%s\n' "$SITE" >/etc/leetkob/caddy.env
-[ -e /etc/leetkob/model.env ] || printf 'LLM_PROVIDER=openrouter\nLLM_MODEL=\nLLM_API_KEY=\n' \
+[ -e /etc/leetkob/model.env ] || printf 'LLM_PROVIDER=anthropic\nLLM_MODEL=claude-haiku-5-5\nLLM_API_KEY=\n' \
   >/etc/leetkob/model.env
 
 DEPLOY_KEY=${2:-}

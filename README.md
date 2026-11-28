@@ -44,18 +44,18 @@ ever sent to the model.
 
 ## Stack
 
-| Part            | Choice                                             |
-| --------------- | -------------------------------------------------- |
-| Language        | TypeScript on Node.js 22                           |
-| API             | Fastify, errors as problem details (RFC 9457)      |
-| Database        | PostgreSQL, schema and migrations with Drizzle     |
-| Queue           | pg-boss on the same PostgreSQL                     |
-| Sandbox         | one-shot Docker containers, `gcc` pinned by digest |
-| Hard rules      | web-tree-sitter with the tree-sitter-cpp grammar   |
-| Tests           | Vitest — unit tests and HTTP contract tests        |
-| Lint and format | ESLint (type-aware), Prettier, `tsc --noEmit`      |
-| CI              | GitHub Actions                                     |
-| Model           | `deepseek/deepseek-v4-flash-0731` via OpenRouter   |
+| Part            | Choice                                                |
+| --------------- | ----------------------------------------------------- |
+| Language        | TypeScript on Node.js 22                              |
+| API             | Fastify, errors as problem details (RFC 9457)         |
+| Database        | PostgreSQL, schema and migrations with Drizzle        |
+| Queue           | pg-boss on the same PostgreSQL                        |
+| Sandbox         | one-shot Docker containers, `gcc` pinned by digest    |
+| Hard rules      | web-tree-sitter with the tree-sitter-cpp grammar      |
+| Tests           | Vitest — unit tests and HTTP contract tests           |
+| Lint and format | ESLint (type-aware), Prettier, `tsc --noEmit`         |
+| CI              | GitHub Actions                                        |
+| Model           | `claude-haiku-5-5` at Anthropic (`@anthropic-ai/sdk`) |
 
 ## API
 
@@ -215,9 +215,9 @@ node eval/leetkob-eval/eval.mjs --data eval/leetkob-eval --predictions predictio
 | `--concurrency <n>` | pairs reviewed at once, 4 by default                                             |
 | `MODEL_OFF=1`       | hard rules only: every semantic constraint is `unsure`, and no network is needed |
 
-Otherwise it needs `LLM_PROVIDER=openrouter`, `LLM_MODEL` and `LLM_API_KEY` from `.env`. The summary
-goes to standard error. Exit code: 0 done, 1 some pair failed, 2 wrong usage or missing settings;
-through `npm` every failure is 1.
+Otherwise it needs `LLM_PROVIDER` (`anthropic` or `openrouter`), `LLM_MODEL` and `LLM_API_KEY` from
+`.env`. The summary goes to standard error. Exit code: 0 done, 1 some pair failed, 2 wrong usage or
+missing settings; through `npm` every failure is 1.
 
 The same command as an image, without network and without a key:
 
@@ -229,6 +229,25 @@ docker run --rm --network none -e MODEL_OFF=1 -v "$PWD/eval/leetkob-eval:/data:r
 
 With the model off, the hard rules decide 55 of the 102 pairs of the dev set with 0 wrongful
 deductions; the other 47 are `unsure`, so `eval.mjs` exits with 1 (recall 40.5%, unsure 46.1%).
+
+With a real model (each folder has the predictions, the `eval.mjs` report and the call log with the
+provider's request ids):
+
+| Run in `eval/runs/`                            | Commit    | Wrongful | Recall         | Unsure         |
+| ---------------------------------------------- | --------- | -------: | -------------- | -------------- |
+| `2026-11-26-deepseek-v4-flash-0731`            | `25b065d` |        0 | 78.4% (29/37)  | 22.5% (23/102) |
+| `2026-11-26-deepseek-v4-flash-0731-schema-fix` | `8a7f449` |        0 | 94.6% (35/37)  | 2.0% (2/102)   |
+| `2026-11-28-claude-haiku-5-5`                  | `dc1977b` |        0 | 100.0% (37/37) | 0.0% (0/102)   |
+
+The model of the product is `claude-haiku-5-5`, called at Anthropic: the last run, on 2026-11-28.
+Its 47 answers all fit the schema and ended normally, with at most 757 output tokens; a call took
+1.8 s at the median and 3.7 s at most.
+
+The first two runs, on 2026-11-26, are of `deepseek/deepseek-v4-flash-0731` through OpenRouter. In
+the first, the model put the verdict in the `constraint` field of 23 answers, which were then
+`unsure`. The schema now allows only the code of the constraint asked about. In the second, two
+violations were missed and `unsure`: one answer gave no evidence line, and one wrote spaces until
+the 4000 output tokens ran out, so it was not valid JSON.
 
 ## Deployment
 
@@ -264,25 +283,37 @@ before you trust it.
 
 ## Model and cost
 
-- Provider: [OpenRouter](https://openrouter.ai). Model: `deepseek/deepseek-v4-flash-0731`.
-  `LLM_MODEL` is this name, not a key; the only key is `LLM_API_KEY`. Unit tests never call a real
-  model.
-- The name has a date: the model behind it does not change, so a run can be repeated. Not an alias
-  such as `~deepseek/deepseek-flash-latest`, which moves to each new version.
-- OpenRouter sends each call to one of several providers of this model. The request asks only for
-  providers that enforce the JSON schema (`provider.require_parameters`). Their prices differ: on
-  2026-11-26 OpenRouter listed $0.06 per million input tokens and $0.18 per million output tokens,
-  and its providers ranged from $0.047 to $0.44 input. The call log keeps the cost OpenRouter
-  reports for each call.
-- Spending cap: the project's API key ("AWAD Final Project") has a **credit limit of $2 in
-  total**, set on the key in OpenRouter when it was created on 2026-11-11. The limit does not
-  reset, and the key expires on 2027-05-10
-  ([screenshot](docs/evidence/openrouter-key-cap.png): $0.000 used, never used). Once the $2 is
-  spent, OpenRouter refuses requests made with that key. The key lives only in each
-  member's `.env` (`LLM_API_KEY`), never in the repository, CI or the sandbox.
-- Cost of one lab (80 submissions): not measured yet. It will be the cost of the dev-set run in its
-  call log ÷ its model calls × semantic constraints per submission × 80. A ban list costs nothing:
-  the model is not called for it.
+- Provider: [Anthropic](https://www.anthropic.com), called directly with the official SDK
+  `@anthropic-ai/sdk` (`LLM_PROVIDER=anthropic`). Model: `claude-haiku-5-5` (Claude Haiku 5.5).
+  `LLM_MODEL` is this name, not a key; the only key is `LLM_API_KEY`. The client gives the SDK the
+  key and the address itself, so no `ANTHROPIC_*` variable of the machine is used. Unit tests never
+  call a real model.
+- The JSON schema of the answer is sent as `output_config.format`, so Anthropic enforces it; the
+  answer is checked again here. An answer cut off at the 4000-token limit, or a refusal, is logged
+  and becomes `unsure`.
+- Price: $0.10 per million input tokens and $0.50 per million output tokens, for a prompt of 100K
+  tokens or less ($0.50 and $2.50 above; a prompt of the dev set has about 1,400). The model's
+  thinking, if any, is counted as output tokens. Anthropic reports tokens, not money, so the client
+  computes the cost of each call from this price (`apps/api/src/review/anthropic.ts`) and the call
+  log keeps it.
+- Spending cap: a spend limit of **$50 a month** on the Claude Console workspace that holds the key
+  (no screenshot yet). At the dev-set cost of a lab below, that is about 2,600 labs a month. When
+  Anthropic refuses a call for the cap (429 `enforced_spend_limit_reached`) or for lack of credit (402), the verdict
+  becomes `unsure` with the reason `cost_limit`, and the call is not retried. The key lives only in
+  each member's `.env` (`LLM_API_KEY`) and in the server's `/etc/leetkob/model.env`, never in the
+  repository, CI or the sandbox.
+- Cost of one lab (80 submissions), from the call log of the run of 2026-11-28: 66,554 input and
+  8,743 output tokens for 47 calls, 66,554 × $0.10 + 8,743 × $0.50 per million = $0.011027, so
+  $0.000235 per call; the dev set has 47 semantic constraints for 47 solutions, 1.00 per submission;
+  80 × 1.00 × $0.000235 = **$0.019**. A ban list costs nothing: the model is not called for it. A
+  lab with more semantic constraints per submission costs that many times more.
+- Spent on 2026-11-28: $0.012477 at the price above (not read from Anthropic's bill): $0.011027 for
+  the committed run and $0.001450 for its two trials of three calls. Two trials before them went to
+  OpenRouter with this key, were refused (401) and cost nothing.
+- Before: the two DeepSeek runs of 2026-11-26 went through [OpenRouter](https://openrouter.ai)
+  (`LLM_PROVIDER=openrouter`, still in the code), with a key capped at $2 in total
+  ([screenshot](docs/evidence/openrouter-key-cap.png)). They cost $0.018624, $0.019892 with their
+  trials, as reported by OpenRouter; a lab of 80 came to 80 × 1.00 × $0.000213 = $0.017.
 - Data sent to the model: the lab statement, one constraint, and the submission code without
   comments, with the words of string literals masked and eight-digit student IDs in identifiers
   zeroed. Nothing else.

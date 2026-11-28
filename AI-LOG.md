@@ -6,10 +6,11 @@ Team: 23120024 — Nguyễn Thanh Bình · 23120046 — Hồ Thùy Hương · 23
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Claude Code (VS Code), Claude Opus 5.5 | repository scaffold, CI, rules file, contract draft, contract and unit tests, implementation, PA#2 evidence and PRs |
 
-Model inside the product: `deepseek/deepseek-v4-flash-0731` through OpenRouter (key with a $2 credit limit,
-README §Model and cost). Data that leaves our system: the lab statement, one constraint, and the
+Model inside the product: `claude-haiku-5-5`, called at Anthropic with `@anthropic-ai/sdk` (spending
+cap: README §Model and cost). Data that leaves our system: the lab statement, one constraint, and the
 submission code without comments, with string words masked and student IDs zeroed (brief §3).
-Cost of one lab of 80: not measured yet (README §Model and cost).
+Cost of one lab of 80: $0.019, measured on the dev set on 2026-11-28 (README §Model and cost).
+Before that date the model was `deepseek/deepseek-v4-flash-0731` through OpenRouter.
 
 ---
 
@@ -326,3 +327,60 @@ Not checked yet: this model can reason before it answers. Whether that fits in t
 of a call, and what it costs, is what the trial of three calls before the dev-set run will show.
 
 By hand: Hương chose the model.
+
+## 2026-11-26: the real-model runs on the dev set
+
+Tool: Claude Code.
+Asked for: a script that runs the checker with the real model (a trial of three calls, the cost,
+a confirmation, the full run, `eval.mjs`, checks of the call log), then the run itself.
+Kept: the script refuses uncommitted code, so a run names the commit it measured, and it never
+overwrites a run. Its checks: 102 predictions, each of the 47 semantic pairs called once, no call
+for a ban list, request ids, no comment of the code in a prompt, no key in the files, `eval.mjs` and
+`labels.jsonl` unchanged. Both runs are committed in `eval/runs/`.
+Changed:
+
+- First run (`25b065d`): 0 wrongful deductions, recall 78.4%, unsure 22.5%. All 23 `unsure` came
+  from one thing: the model wrote `"pass"` or `"violation"` in the `constraint` field. The schema
+  allowed any string there. It now allows only the code asked about, so the provider enforces it:
+  test `8440e34` (red), then `8a7f449`. The check that the answer names that code is still there.
+- Second run (`8a7f449`): 0 wrongful deductions, recall 94.6% (35/37), unsure 2.0% (2/102). Cost of
+  a lab of 80: 80 × 1.00 × $0.000213 = $0.017.
+
+Not changed: the prompt and the hard rules. The fix is about the shape of every answer, not about a
+problem of the dev set.
+Not done yet: one answer wrote spaces until the 4000 output tokens ran out (18 s, the most
+expensive call of the run). It is `unsure`, as an answer that does not fit the schema should be.
+
+By hand: Hương asked for both runs and for the fix between them.
+
+## 2026-11-28: the model at Anthropic
+
+Tool: Claude Code.
+Asked for: call Claude Haiku directly at Anthropic, with an Anthropic key, instead of through
+OpenRouter; then a run on the dev set.
+Kept: the official SDK `@anthropic-ai/sdk` 1.14 (`40e10e8`), behind the same model interface as the
+OpenRouter client, chosen by `LLM_PROVIDER`. Test first: `dec0b8f` (red), then `dc1977b`. The client
+gives the SDK the key and the address itself, so no `ANTHROPIC_*` variable or profile of the machine
+is used. The SDK's own retries are off and the client retries, so a 429 at the spend limit becomes
+`cost_limit` and is not retried, while a busy 429 is. Anthropic reports tokens, not money: the cost
+of a call is computed from the price in the code. A refusal, or an answer cut off at the token
+limit, is logged and becomes `unsure`.
+Changed:
+
+- The first test expected the key in the `x-api-key` header. SDK 1.x sends it as
+  `Authorization: Bearer`, seen in its code. The expectation was changed in a commit of its own,
+  before the code and still red (`2710cd7`). It checks as strictly as before that the key is in no
+  other header, nor in the address or the body. A lint fix of the test is also its own commit
+  (`8404695`).
+- Two trials of three calls failed with OpenRouter 401 before the run, because `.env` still named
+  OpenRouter as the provider; they cost nothing. The run script's key check now also looks for
+  `sk-ant-`.
+- Run at `dc1977b`, committed in `eval/runs/2026-11-28-claude-haiku-5-5`: 0 wrongful deductions,
+  recall 100.0% (37/37), unsure 0.0% (0/102). 47 calls, all with a request id; 66,554 input and
+  8,743 output tokens, $0.011027. Cost of a lab of 80: 80 × 1.00 × $0.000235 = $0.019.
+
+Not changed: the prompt, the hard rules and the schema.
+Not done yet: the spending cap on the Anthropic key, and its screenshot.
+
+By hand: Hương chose Claude Haiku at Anthropic, approved the new dependency, and set the key in
+`.env` herself.

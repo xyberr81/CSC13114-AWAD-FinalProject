@@ -1,0 +1,7 @@
+Model: claude-haiku-5-5
+Calls: 47, with a request id: 47, with a cost: 47
+Tokens: 66554 in, 8743 out
+Cost of this run: 0.011027 USD
+Per call: 0.011027 / 47 = 0.000235 USD
+Semantic constraints per submission: 47 / 47 = 1.00
+Lab of 80: 80 x 1.00 x 0.000235 = 0.018769 USD
