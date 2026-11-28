@@ -67,6 +67,10 @@ dependencies, the database history and `main` under a human.
 - `.env` is git-ignored; [`.env.example`](.env.example) lists every variable, without values.
 - CI needs no stored secret: its database is a throw-away service container with no password,
   and `JWT_SECRET` is generated for each run.
+- The deploy job has two, both secrets of the `production` environment, which only `main` may
+  deploy: `DEPLOY_SSH_KEY`, which can only run `deploy.sh main --model-env-on-stdin` on the server,
+  and `LLM_API_KEY`, which it sends there on that command's standard input to become
+  `/etc/leetkob/model.env`.
 - History scan: `gitleaks` over the full history before submitting — see `PA2.md`.
 - The model API key is an Anthropic key. Its Claude Console workspace has a spend limit of $50 a
   month, recorded in README §Model and cost. It lives only in `.env`, which the assistant may not read.
