@@ -1,8 +1,9 @@
 name: Deploy
 
 # Every push to main whose CI is green goes to the server (README, "Deployment"). The key in
-# DEPLOY_SSH_KEY can only run `deploy.sh main` there: setup.sh puts it in authorized_keys with a
-# forced command.
+# DEPLOY_SSH_KEY can only run `deploy.sh main --model-env-on-stdin` there: setup.sh puts it in
+# authorized_keys with a forced command. The model settings of the production environment go on
+# its standard input and become /etc/leetkob/model.env.
 on:
   workflow_run:
     workflows: [CI]
@@ -33,13 +34,20 @@ jobs:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           # The server's host key, pinned: a server that answers with another key gets nothing.
           KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
           install -d -m 700 ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy
           chmod 600 ~/.ssh/deploy
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-          ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            -o ServerAliveInterval=30 "deploy@$HOST"
+          # On standard input, so the key is in no command line and no file; deploy.sh refuses an
+          # empty or malformed setting before it changes anything.
+          printf 'LLM_PROVIDER=%s\nLLM_MODEL=%s\nLLM_API_KEY=%s\n' \
+            "$LLM_PROVIDER" "$LLM_MODEL" "$LLM_API_KEY" |
+            ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              -o ServerAliveInterval=30 "deploy@$HOST"
       - name: the new API answers
         run: |
           curl -fsS --retry 10 --retry-delay 3 --retry-all-errors "https://$HOST/v1/health"

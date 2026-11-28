@@ -253,8 +253,8 @@ the 4000 output tokens ran out, so it was not valid JSON.
 
 <https://leetkob-awad.centralindia.cloudapp.azure.com>: one Ubuntu server. Caddy (HTTPS), the API and
 PostgreSQL run in Docker Compose; the two workers run on the host under systemd, so no container
-mounts the Docker socket. The model key is only in `/etc/leetkob/model.env`, which systemd gives to
-the review worker.
+mounts the Docker socket. The model settings are in `/etc/leetkob/model.env`, which systemd gives to
+the review worker only; each deployment from GitHub writes that file (below).
 
 ```bash
 sudo deploy/setup.sh <dns-name> [deploy-key.pub]   # once, on a fresh Ubuntu 24.04; safe to rerun
@@ -264,7 +264,15 @@ sudo /opt/leetkob/deploy/deploy.sh main            # by hand: a branch or a tag
 Continuous deployment: when CI is green on a push to `main`, `.github/workflows/deploy.yml` logs in
 as the `deploy` user and runs `deploy.sh main`, then checks that `/v1/health` and `/docs/json`
 answer. Its key can do nothing else: `setup.sh` puts it in `authorized_keys` with
-`restrict,command="sudo -n /opt/leetkob/deploy/deploy.sh main"`, and sudo allows that one command.
+`restrict,command="sudo -n /opt/leetkob/deploy/deploy.sh main --model-env-on-stdin"`, and sudo allows
+that one command.
+
+The model settings come from the `production` environment of the repository: `LLM_PROVIDER` and
+`LLM_MODEL` are variables, `LLM_API_KEY` is a secret. The job sends the three of them on the standard
+input of the SSH session, never on a command line or in a file. `deploy.sh` checks them before it
+changes anything (three lines, in that order, none empty) and replaces `model.env` just before the
+workers restart. So the model of the server changes in GitHub, not on the server, and a missing
+setting fails the deployment while the old version keeps running.
 `main` only changes through a green pull request, so the deployment never runs code that failed CI.
 One deployment runs at a time; it deploys `main` as it is when the job starts.
 
@@ -276,7 +284,23 @@ sudo /opt/leetkob/deploy/setup.sh <dns-name> deploy-key.pub        # on the serv
 gh secret set DEPLOY_SSH_KEY < deploy-key && rm deploy-key
 gh variable set DEPLOY_HOST --body <dns-name>
 ssh-keyscan -t ed25519 <dns-name> | gh variable set DEPLOY_KNOWN_HOSTS
+gh variable set LLM_PROVIDER --env production --body <provider>
+gh variable set LLM_MODEL --env production --body <model>
+gh secret set LLM_API_KEY --env production                        # paste the key when asked
 ```
+
+In the repository settings, Environments → `production` → Deployment branches, allow `main` only.
+Otherwise a workflow on any branch could name the environment and read `LLM_API_KEY`.
+
+On a server set up before `--model-env-on-stdin` existed, rerun `setup.sh` with the deploy key that
+is already installed, once main has the new scripts:
+
+```bash
+sudo sh -c "grep -o 'ssh-ed25519 .*' /home/deploy/.ssh/authorized_keys > /root/deploy-key.pub"
+sudo /opt/leetkob/deploy/setup.sh <dns-name> /root/deploy-key.pub
+```
+
+Until then the old forced command ignores the settings and deploys as before.
 
 Compare the scanned key with `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` on the server
 before you trust it.
@@ -300,8 +324,9 @@ before you trust it.
   (no screenshot yet). At the dev-set cost of a lab below, that is about 2,600 labs a month. When
   Anthropic refuses a call for the cap (429 `enforced_spend_limit_reached`) or for lack of credit (402), the verdict
   becomes `unsure` with the reason `cost_limit`, and the call is not retried. The key lives only in
-  each member's `.env` (`LLM_API_KEY`) and in the server's `/etc/leetkob/model.env`, never in the
-  repository, CI or the sandbox.
+  each member's `.env` (`LLM_API_KEY`), in the `production` environment secret that the deploy job
+  sends to the server, and in the server's `/etc/leetkob/model.env`; never in the repository, the CI
+  job or the sandbox.
 - Cost of one lab (80 submissions), from the call log of the run of 2026-11-28: 66,554 input and
   8,743 output tokens for 47 calls, 66,554 × $0.10 + 8,743 × $0.50 per million = $0.011027, so
   $0.000235 per call; the dev set has 47 semantic constraints for 47 solutions, 1.00 per submission;

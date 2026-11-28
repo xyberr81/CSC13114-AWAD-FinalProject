@@ -384,3 +384,27 @@ Not done yet: the spending cap on the Anthropic key, and its screenshot.
 
 By hand: Hương chose Claude Haiku at Anthropic, approved the new dependency, and set the key in
 `.env` herself.
+
+## 2026-11-28: the deployment writes the model settings
+
+Tool: Claude Code.
+Asked for: no more editing `/etc/leetkob/model.env` by hand on the server; the model settings come
+from GitHub, as a pull request of its own on `foundation`.
+Kept: the forced command and the one sudo rule; the deploy key still runs one command. It now has
+`--model-env-on-stdin`, and the job sends `LLM_PROVIDER`, `LLM_MODEL` (variables of the `production`
+environment) and `LLM_API_KEY` (its secret) on standard input.
+Changed:
+
+- A probe of `deploy.sh` with 21 inputs found that `read` dropped a last line without a newline, so
+  the key line was lost. Fixed with `|| [ -n "$line" ]`; every bad input now stops before
+  `cd /opt/leetkob`, and no message shows a value.
+- The first wording of `PERMISSIONS.md` put `DEPLOY_SSH_KEY` in the `production` environment; the
+  README sets it as a repository secret. Corrected.
+
+Rejected: Azure Key Vault with the VM's managed identity, the usual way on Azure: we do not own the
+subscription.
+
+Not checked yet: no deployment has run with it. The settings of the repository (the variables, the
+secret, and the rule that only `main` may deploy to `production`) are not set.
+
+By hand: Bình chose this way.
