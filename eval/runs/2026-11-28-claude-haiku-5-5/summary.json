@@ -1,0 +1,12 @@
+{
+  "model": "claude-haiku-5-5",
+  "modelOff": false,
+  "pairs": 102,
+  "hardRule": 55,
+  "modelCalls": 47,
+  "unsure": 0,
+  "failed": 0,
+  "promptTokens": 66554,
+  "completionTokens": 8743,
+  "costUsd": 0.011026900000000003
+}

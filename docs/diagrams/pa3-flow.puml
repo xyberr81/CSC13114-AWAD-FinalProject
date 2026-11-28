@@ -1,0 +1,54 @@
+title LeeTKOB PA#3: from submission to the TA review queue
+autonumber
+hide footbox
+
+actor Student
+actor TA
+participant "API (Fastify)" as API
+queue "pg-boss queue" as Q
+participant "Worker" as W
+participant "Sandbox container" as SB
+participant "Anthropic" as LLM
+database "PostgreSQL" as DB
+
+== Student submits ==
+Student -> API ++ : POST /v1/labs/{labId}/submissions
+API -> DB : insert submission (status queued)
+API ->> Q : enqueue judge job
+API --> Student -- : 201, status queued
+
+== Judge job ==
+Q ->> W ++ : deliver judge job
+W -> DB : load code, tests, limits\nset status judging
+W -> SB ++ : docker run, code on stdin
+note over SB : g++ -std=c++17 -O2\nno network, no secrets
+SB --> W -- : outcome of each test
+W -> DB : save test results and final status
+opt status is accepted
+  W ->> Q : enqueue review job
+end
+deactivate W
+
+== Review job ==
+Q ->> W ++ : deliver review job
+W -> W : strip comments, keep line numbers
+W -> W : hard rules on each "Do not use" list
+loop each semantic constraint
+  W -> LLM ++ : statement, constraints,\ncomment-free code
+  LLM --> W -- : JSON verdict with evidence
+  W -> W : check schema, time limit, evidence
+  W -> DB : log the call in model_calls
+end
+W -> DB : insert verdicts\nON CONFLICT DO NOTHING
+deactivate W
+note over W, DB : A bad schema or a timeout\nbecomes unsure with a reason
+
+== Student checks the result ==
+Student -> API ++ : GET submission
+API -> DB : read status and test results
+API --> Student -- : status and per-test results,\nno test data, no constraint verdicts
+
+== TA reviews ==
+TA -> API ++ : GET /v1/labs/{labId}/review-queue
+API -> DB : violations, unsures, 10% of passes
+API --> TA -- : verdicts with evidence lines\nand deductions

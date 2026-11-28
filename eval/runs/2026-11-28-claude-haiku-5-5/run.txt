@@ -1,0 +1,2 @@
+commit dc1977b800294e2e8cf4aea1bfe2c0a02752ee30
+npm run checker -- eval/leetkob-eval --out predictions.jsonl --calls calls.jsonl

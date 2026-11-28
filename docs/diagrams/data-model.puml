@@ -1,0 +1,106 @@
+title LeeTKOB data model after migration 0002 (PA#3)
+
+entity users {
+  * id : int
+  email : text // unique
+  password_hash : text
+  role : user_role // admin, ta, student
+  created_at : timestamptz
+}
+entity classes {
+  * id : int
+  code : text // unique
+  name : text
+  created_at : timestamptz
+}
+entity class_members {
+  * class_id : int <<FK>>
+  * user_id : int <<FK>>
+  role : member_role // ta, student
+}
+entity labs {
+  * id : int
+  class_id : int <<FK>>
+  title : text
+  statement : text
+  deadline : timestamptz
+  time_limit_ms : int <<new>> // 1000 to 5000, default 1000
+  memory_limit_mb : int <<new>> // 64 to 512, default 256
+  created_at : timestamptz
+}
+entity lab_constraints <<new>> {
+  * id : int
+  lab_id : int <<FK>>
+  code : text // C1, unique per lab
+  text : text
+  deduction : int // 0 to 10
+}
+entity lab_tests <<new>> {
+  * id : int
+  lab_id : int <<FK>>
+  position : int // unique per lab
+  input : text
+  expected_output : text
+}
+entity submissions {
+  * id : int
+  lab_id : int <<FK>>
+  student_id : int <<FK>>
+  language : text
+  code : text
+  status : text -> submission_status // queued to a judge outcome
+  created_at : timestamptz
+}
+entity idempotency_keys {
+  * user_id : int <<FK>>
+  * key : text
+  fingerprint : text
+  submission_id : int <<FK>>
+  created_at : timestamptz
+}
+entity submission_test_results <<new>> {
+  * submission_id : int <<FK>>
+  * test_id : int <<FK>>
+  status : test_status
+  time_ms : int
+  memory_kb : int
+}
+entity verdicts <<new>> {
+  * id : int
+  submission_id : int <<FK>> // unique with constraint_id
+  constraint_id : int <<FK>>
+  verdict : verdict_value // pass, violation, unsure
+  evidence : jsonb // [{line, text}]
+  source : verdict_source // hard_rule, model
+  unsure_reason : unsure_reason // set only when unsure
+  explanation : text // the model's words, if any
+  created_at : timestamptz
+}
+entity model_calls <<new>> {
+  * id : int
+  submission_id : int <<FK>>
+  provider_request_id : text
+  model : text
+  prompt_tokens : int
+  completion_tokens : int
+  duration_ms : int
+  cost_usd : numeric(12,6)
+  prompt : text
+  response : text
+  created_at : timestamptz
+}
+
+classes::id ||--o{ class_members::class_id : has
+users::id ||--o{ class_members::user_id : joins
+classes::id ||--o{ labs::class_id : owns
+labs::id ||--o{ lab_constraints::lab_id : sets
+labs::id ||--o{ lab_tests::lab_id : tests with
+labs::id ||--o{ submissions::lab_id : receives
+users::id ||--o{ submissions::student_id : submits
+users::id ||--o{ idempotency_keys::user_id : sends
+submissions::id |o--o{ idempotency_keys::submission_id : answers
+submissions::id ||--o{ submission_test_results::submission_id : scored by
+lab_tests::id ||--o{ submission_test_results::test_id : run as
+submissions::id ||--o{ verdicts::submission_id : reviewed in
+lab_constraints::id ||--o{ verdicts::constraint_id : judged in
+submissions::id ||--o{ model_calls::submission_id : logs

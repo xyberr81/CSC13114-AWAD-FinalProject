@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C1",
+    "text": "Do not call a library power function: `std::pow`, `std::powl`, `std::powf`, `pow`, `powl`, `powf`.",
+    "deduction": 2
+  },
+  {
+    "id": "C2",
+    "text": "Compute the result with fast exponentiation you wrote yourself: the exponent is halved at each step, so the number of multiplications grows with log b. Multiplying by a once per unit of b does not satisfy this constraint, whatever the function is called.",
+    "deduction": 4
+  }
+]

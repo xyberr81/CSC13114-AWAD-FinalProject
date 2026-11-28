@@ -1,0 +1,9 @@
+# Only what the image needs; above all no .env, and no dev set to look answers up in.
+*
+!package.json
+!package-lock.json
+!apps
+**/node_modules
+**/dist
+**/.env
+**/.env.*

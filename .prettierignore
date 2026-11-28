@@ -3,3 +3,10 @@ coverage/
 drizzle/
 node_modules/
 package-lock.json
+.verify/
+
+# the published dev set: kept byte for byte, so never reformatted
+eval/leetkob-eval/
+
+# committed runs: kept as the checker and eval.mjs wrote them
+eval/runs/

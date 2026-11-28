@@ -128,10 +128,10 @@ Idempotency-Key: 5f0c8a3e-2b1d-4c47-9e0a-6a1f2b3c4d5e
 }
 ```
 
-| Field      | Type   | Required | Rule                                                                                                                |
-| ---------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------- |
-| `language` | string | yes      | exactly `"cpp"`                                                                                                     |
-| `code`     | string | yes      | 1 to 65 536 characters, with at least one character that is not whitespace. Never coerced: a number is not a string |
+| Field      | Type   | Required | Rule                                                                                                                                                                    |
+| ---------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `language` | string | yes      | exactly `"cpp"`                                                                                                                                                         |
+| `code`     | string | yes      | 1 to 65 536 characters, with at least one character that is not whitespace, and no U+0000 and no unpaired surrogate (`\ud800`). Never coerced: a number is not a string |
 
 The body must be a JSON object. A missing body is a `validation` problem with pointer `""`.
 
@@ -171,8 +171,8 @@ Content-Type: application/json
 ```
 
 The body is a Submission (§3). A student may submit to the same lab many times; each request with
-a new `Idempotency-Key` creates a new submission. Which submission is reviewed is decided in PA#3
-(§6, D3).
+a new `Idempotency-Key` creates a new submission. The last one before the deadline is the one that
+counts (§6, D3).
 
 **Idempotency**
 
@@ -203,18 +203,21 @@ a new `Idempotency-Key` creates a new submission. Which submission is reviewed i
   sunset date, and every `/v1` response carries `Deprecation: @<unix time>`,
   `Sunset: <HTTP date>` (at least 4 weeks later) and
   `Link: </v2/labs/{labId}/submissions>; rel="successor-version"`.
+- One exception, 2026-11-25: `code` may no longer contain U+0000 or an unpaired surrogate. U+0000 always
+  got `500`, so no client relied on it. An unpaired surrogate got `201`, but was stored as U+FFFD, so what
+  was judged was not what was sent.
 - Every change to this file is its own pull request, says why, and is reviewed by a human before
   any code depends on it.
 
 ## 6. Decisions where the brief is silent
 
-| #   | Question                                            | Decision                                                                                             | Source        |
-| --- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------- |
-| D1  | Can a student submit after the deadline?            | No: `409 lab-closed`. A replay of a submission accepted before the deadline still returns its `201`. | team decision |
-| D2  | 403 or 404 for a lab outside the student's classes? | `404`, identical to a missing lab, so labs of other classes cannot be discovered.                    | team decision |
-| D3  | Which of several submissions is reviewed?           | Not decided by this endpoint; every submission is stored. PA#3 will review the latest Accepted one.  | team decision |
-| D4  | How large may a submission be?                      | 65 536 characters of code; 512 KiB of body.                                                          | team decision |
-| D5  | How does a student get a token?                     | Out of scope for PA#2; a login endpoint comes with accounts in PA#3.                                 | team decision |
+| #   | Question                                            | Decision                                                                                                                                                                | Source        |
+| --- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| D1  | Can a student submit after the deadline?            | No: `409 lab-closed`. A replay of a submission accepted before the deadline still returns its `201`.                                                                    | team decision |
+| D2  | 403 or 404 for a lab outside the student's classes? | `404`, identical to a missing lab, so labs of other classes cannot be discovered.                                                                                       | team decision |
+| D3  | Which of several submissions is reviewed?           | The student's last submission before the deadline, whatever its result. Every submission is stored and judged. Until the deadline, the latest one counts provisionally. | FAQ-02        |
+| D4  | How large may a submission be?                      | 65 536 characters of code; 512 KiB of body.                                                                                                                             | team decision |
+| D5  | How does a student get a token?                     | Out of scope for PA#2; a login endpoint comes with accounts in PA#3.                                                                                                    | team decision |
 
 ## 7. Non-goals
 
