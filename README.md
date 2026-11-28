@@ -273,9 +273,9 @@ before you trust it.
 - Price on 2026-11-28: $4 per million input tokens and $20 per million output tokens. The provider
   does not report a cost, so the call log keeps the tokens times this price
   (`apps/api/src/review/anthropic.ts`). A model with no price there is logged without a cost.
-- Spending cap: **not set yet.** Before the key is used, set a spend limit on the Claude Console
-  workspace that holds it. A request refused for billing (HTTP 402) makes the constraint `unsure`
-  with the reason `cost_limit`. The key lives only in each member's `.env` (`LLM_API_KEY`), never in
+- Spending cap: a **spend limit of $50 a month** on the Claude Console workspace that holds the
+  key. Once it is reached, the API refuses requests until the next month. A request refused for
+  billing (HTTP 402) makes the constraint `unsure` with the reason `cost_limit`. The key lives only in each member's `.env` (`LLM_API_KEY`), never in
   the repository, CI or the sandbox.
 - Until 2026-11-28 the provider was OpenRouter, with `deepseek/deepseek-v4-flash-0731` and a key
   with a $2 credit limit ([screenshot](docs/evidence/openrouter-key-cap.png)).

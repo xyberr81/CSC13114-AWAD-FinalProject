@@ -345,6 +345,6 @@ Changed:
 - The provider reports no cost, so the client works it out from the tokens and a price table.
 
 Not checked yet: no call has been made to the real API. The model (`claude-opus-5-5`) is the SDK
-guide's default, not a team choice, and no spend limit is set on the workspace.
+guide's default, not a team choice.
 
-By hand: nothing yet. A member still has to choose the model and set the spend limit.
+By hand: Bình set a spend limit of $50 a month on the Claude Console workspace.

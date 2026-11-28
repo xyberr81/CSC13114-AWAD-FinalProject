@@ -68,5 +68,5 @@ dependencies, the database history and `main` under a human.
 - CI needs no stored secret: its database is a throw-away service container with no password,
   and `JWT_SECRET` is generated for each run.
 - History scan: `gitleaks` over the full history before submitting — see `PA2.md`.
-- The model API key is a Claude Console API key. Its workspace spend limit is not set yet
-  (README §Model and cost). It lives only in `.env`, which the assistant may not read.
+- The model API key is a Claude Console API key. Its workspace has a spend limit of $50 a
+  month (README §Model and cost). It lives only in `.env`, which the assistant may not read.
