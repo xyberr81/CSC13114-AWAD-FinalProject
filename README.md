@@ -55,7 +55,7 @@ ever sent to the model.
 | Tests           | Vitest — unit tests and HTTP contract tests        |
 | Lint and format | ESLint (type-aware), Prettier, `tsc --noEmit`      |
 | CI              | GitHub Actions                                     |
-| Model           | `claude-opus-5-5` on the Claude Platform           |
+| Model           | `claude-haiku-5-5` on the Claude Platform          |
 
 ## API
 
@@ -265,12 +265,13 @@ before you trust it.
 ## Model and cost
 
 - Provider: the [Claude Platform](https://platform.claude.com), through the official
-  `@anthropic-ai/sdk`. Model: `claude-opus-5-5`. `LLM_MODEL` is this name, not a key; the only key
+  `@anthropic-ai/sdk`. Model: `claude-haiku-5-5`. `LLM_MODEL` is this name, not a key; the only key
   is `LLM_API_KEY`, a Claude Console API key. Unit tests never call a real model.
 - The API enforces the JSON schema of the answer (`output_config.format`), and the answer is
   checked again here. Effort is `medium`; thinking counts towards the 4000 output tokens of a call,
   and an answer cut off there becomes `unsure`.
-- Price on 2026-11-28: $4 per million input tokens and $20 per million output tokens. The provider
+- Price on 2026-11-28: $0.10 per million input tokens and $0.50 per million output tokens, for
+  prompts up to 100K tokens ($0.50 and $2.50 above that; a review prompt is far below it). The provider
   does not report a cost, so the call log keeps the tokens times this price
   (`apps/api/src/review/anthropic.ts`). A model with no price there is logged without a cost.
 - Spending cap: a **spend limit of $50 a month** on the Claude Console workspace that holds the

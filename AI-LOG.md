@@ -6,7 +6,7 @@ Team: 23120024 — Nguyễn Thanh Bình · 23120046 — Hồ Thùy Hương · 23
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Claude Code (VS Code), Claude Opus 5.5 | repository scaffold, CI, rules file, contract draft, contract and unit tests, implementation, PA#2 evidence and PRs |
 
-Model inside the product: `claude-opus-5-5` on the Claude Platform since 2026-11-28 (before that
+Model inside the product: `claude-haiku-5-5` on the Claude Platform since 2026-11-28 (before that
 `deepseek/deepseek-v4-flash-0731` through OpenRouter; README §Model and cost). Data that leaves our system: the lab statement, one constraint, and the
 submission code without comments, with string words masked and student IDs zeroed (brief §3).
 Cost of one lab of 80: not measured yet (README §Model and cost).
@@ -344,7 +344,11 @@ Changed:
   as `authorization: Bearer`; the test was wrong, not the client.
 - The provider reports no cost, so the client works it out from the tokens and a price table.
 
-Not checked yet: no call has been made to the real API. The model (`claude-opus-5-5`) is the SDK
-guide's default, not a team choice.
+Rejected: `claude-opus-5-5`, the SDK guide's default and the first draft of this change. At $4 in
+and $20 out per million tokens, against $0.10 and $0.50 for `claude-haiku-5-5`, it fits a $50 monthly
+limit far less well.
 
-By hand: Bình set a spend limit of $50 a month on the Claude Console workspace.
+Not checked yet: no call has been made to the real API.
+
+By hand: Bình set a spend limit of $50 a month on the Claude Console workspace and chose
+`claude-haiku-5-5`.
